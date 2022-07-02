@@ -14,11 +14,10 @@ find_package(std_msgs REQUIRED)
 find_package(mavros REQUIRED)
 find_package(mavros_msgs REQUIRED)
 
-add_executable(state_machine
-  src/state_machine.cpp
-  src/subscriber.cpp)
+add_executable(state_machine src/state_machine.cpp)
+
 target_include_directories(state_machine PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/brain>
   $<INSTALL_INTERFACE:include>)
 target_compile_features(state_machine PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 

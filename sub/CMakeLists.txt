@@ -16,7 +16,7 @@ find_package(mavros_msgs REQUIRED)
 
 add_executable(movement src/movement.cpp)
 target_include_directories(movement PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/sub>
   $<INSTALL_INTERFACE:include>)
 target_compile_features(movement PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
