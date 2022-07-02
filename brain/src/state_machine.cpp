@@ -5,6 +5,7 @@
 //#include "rclcpp/rclcpp.hpp"
 //#include "std_msgs/msg/string.hpp"
 
+// should add headers and reimplement instead
 #include "subscriber.cpp"
 #include "publisher.cpp"
 
