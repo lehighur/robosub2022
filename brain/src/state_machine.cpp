@@ -24,8 +24,26 @@ class StateMachine : public rclcpp::Node {
     StateMachine() : Node("StateMachine") {
       cout << "StateMachine constructor\n";
     }
+    
+    get_state() {
+      return current_state;
+    }
 
   private:
+    utin8_t current_state;
+
+    enum States {
+      IDLE,
+      PREQUAL,
+      COINFLIP,
+      GATE,
+      PATH,
+      BUOY,
+      BIN,
+      TORPEDO,
+      OCTAGON
+    };
+
 };
 
 int main(int argc, char ** argv) {
