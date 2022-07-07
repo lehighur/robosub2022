@@ -100,7 +100,7 @@ int main(int argc, char ** argv)
   //man_msg.r = 0; man_msg.buttons = 0;
   //man_pub->enq(man_msg);
 
-  //ifstream man_file("test/src/man_test.txt");
+  //ifstream man_file("src/test/src/man_test.txt");
   //if (man_file.is_open())
   //{
   //  string line;
@@ -136,7 +136,7 @@ int main(int argc, char ** argv)
     rc_msg.channels[i] = 0;
   }
   rc_pub->enq(rc_msg);
-  ifstream rc_file("test/src/rc_test.txt");
+  ifstream rc_file("src/test/src/rc_test.txt");
   if (rc_file.is_open())
   {
     string line;

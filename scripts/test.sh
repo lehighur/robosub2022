@@ -4,5 +4,4 @@
 pushd src
 rosdep install -i --from-path test --rosdistro foxy -y && \
 colcon build --packages-select test && \
-. src/install/setup.bash
 popd
