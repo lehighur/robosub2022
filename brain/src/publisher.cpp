@@ -7,12 +7,12 @@
 
 using namespace std::chrono_literals;
 
-// move all this ish to a publisher node
 class Publisher : public rclcpp::Node {
   public:
     Publisher() : Node("Publisher"), count_(0)
     {
       publisher_ = this->create_publisher<std_msgs::msg::String>("/sm", 10);
+      publisher_ = this->create_publisher<manualMsg>("/mavros/manual_control/control", 10);
       timer_ = this->create_wall_timer(
         500ms, std::bind(&Publisher::timer_callback, this));
     }

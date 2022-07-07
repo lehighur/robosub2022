@@ -1,6 +1,9 @@
 #include <cstdio>
 #include <chrono>
 #include <memory>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
 
 //#include "rclcpp/rclcpp.hpp"
 //#include "std_msgs/msg/string.hpp"
@@ -8,6 +11,7 @@
 // should add headers and reimplement instead
 #include "subscriber.cpp"
 #include "publisher.cpp"
+#include "thread_safe_queue.cpp"
 
 using namespace std;
 
@@ -24,7 +28,7 @@ class StateMachine : public rclcpp::Node {
     StateMachine() : Node("StateMachine") {
       cout << "StateMachine constructor\n";
     }
-    
+
     get_state() {
       return current_state;
     }
@@ -46,12 +50,16 @@ class StateMachine : public rclcpp::Node {
 
 };
 
+
 int main(int argc, char ** argv) {
   (void) argc;
   (void) argv;
 
   printf("hello world brain package\n");
+  ThreadSafeQueue q;
 
+  int x = 10;
+  q.enqueue(x);
   // this works but look at this for improvements:
   // https://github.com/ros2/examples/blob/master/rclcpp/executors/multithreaded_executor/multithreaded_executor.cpp
   rclcpp::init(argc, argv);
@@ -59,7 +67,7 @@ int main(int argc, char ** argv) {
   auto subnode = std::make_shared<Subscriber>();
   auto pubnode = std::make_shared<Publisher>();
   auto smnode = std::make_shared<StateMachine>();
-                                                   
+
   executor.add_node(subnode);
   executor.add_node(pubnode);
   executor.add_node(smnode);
