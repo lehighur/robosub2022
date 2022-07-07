@@ -22,4 +22,6 @@ $ ros2 pkg create --build-type ament_cmake --node-name state_machine brain --dep
 $ ros2 pkg create --build-type ament_cmake --node-name test_node test --dependencies rclcpp std_msgs mavros_msgs
 
 $ rosdep install -i --from-path src --rosdistro foxy -y
+ or
+$ rosdep install -i --from-path src/test --rosdistro foxy -y
 ```
