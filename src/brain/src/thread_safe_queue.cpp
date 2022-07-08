@@ -11,6 +11,7 @@ struct Event {
   Content *content;
 };
 
+template<typename T>
 class ThreadSafeQueue
 {
   public:
@@ -60,4 +61,3 @@ class ThreadSafeQueue
     mutable std::mutex mutex;			// the mutex (basically telling which thread is allowed to access the queue)
     std::condition_variable condition;	// block the calling thread until notified to resume
 };
-}
