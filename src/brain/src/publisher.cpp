@@ -4,15 +4,16 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "mavros_msgs/msg/manual_control.hpp"
 
 using namespace std::chrono_literals;
 
+typedef mavros_msgs::msg::ManualControl manualMsg;
 class Publisher : public rclcpp::Node {
   public:
-    Publisher() : Node("Publisher"), count_(0)
-    {
+    Publisher() : Node("Publisher"), count_(0) {
       publisher_ = this->create_publisher<std_msgs::msg::String>("/sm", 10);
-      publisher_ = this->create_publisher<manualMsg>("/mavros/manual_control/control", 10);
+      //publisher_ = this->create_publisher<manualMsg>("/mavros/manual_control/control", 10);
       timer_ = this->create_wall_timer(
         500ms, std::bind(&Publisher::timer_callback, this));
     }

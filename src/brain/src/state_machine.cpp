@@ -26,15 +26,15 @@ using namespace std;
 class StateMachine : public rclcpp::Node {
   public:
     StateMachine() : Node("StateMachine") {
-      cout << "StateMachine constructor\n";
+      printf("StateMachine constructor\n");
     }
 
-    get_state() {
+    uint8_t get_state() {
       return current_state;
     }
 
   private:
-    utin8_t current_state;
+    uint8_t current_state;
 
     enum States {
       IDLE,
@@ -56,10 +56,6 @@ int main(int argc, char ** argv) {
   (void) argv;
 
   printf("hello world brain package\n");
-  ThreadSafeQueue q;
-
-  int x = 10;
-  q.enqueue(x);
   // this works but look at this for improvements:
   // https://github.com/ros2/examples/blob/master/rclcpp/executors/multithreaded_executor/multithreaded_executor.cpp
   rclcpp::init(argc, argv);
