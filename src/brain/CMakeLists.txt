@@ -13,23 +13,28 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(mavros REQUIRED)
 find_package(mavros_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
-add_executable(state_machine src/state_machine.cpp)
+add_executable(brain
+  src/brain.cpp
+  src/state_machine.cpp
+  )
 
-target_include_directories(state_machine PUBLIC
+target_include_directories(brain PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/brain>
   $<INSTALL_INTERFACE:include>)
-target_compile_features(state_machine PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(brain PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
 ament_target_dependencies(
-  state_machine
+  brain
   rclcpp
   std_msgs
   mavros
   mavros_msgs
+  sensor_msgs
 )
 
-install(TARGETS state_machine
+install(TARGETS brain
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
