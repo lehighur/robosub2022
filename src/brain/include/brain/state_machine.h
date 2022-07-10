@@ -1,5 +1,8 @@
 #include <cstdint>
 class StateMachine {
+  public:
+    StateMachine();
+    uint8_t get_state();
   private:
     uint8_t current_state;
     enum States {
@@ -13,8 +16,4 @@ class StateMachine {
       TORPEDO,
       OCTAGON
     };
-    // event queue
-  public:
-    StateMachine();
-    uint8_t get_state();
 };

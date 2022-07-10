@@ -129,7 +129,7 @@ int main(int argc, char ** argv)
 
   auto rc_pub = std::make_shared<RCPublisher>();
   rcMsg rc_msg;
-  printf("%d\n", rc_msg.channels.size());
+  printf("%ld\n", rc_msg.channels.size());
   rc_msg.channels[0] = 0; rc_msg.channels[1] = 0; rc_msg.channels[2] = 0; rc_msg.channels[3] = 0;
   rc_msg.channels[4] = 0; rc_msg.channels[5] = 0; rc_msg.channels[6] = 0; rc_msg.channels[7] = 0;
   for (int i = 8; i < 18; ++i) {

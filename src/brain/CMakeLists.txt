@@ -17,6 +17,7 @@ find_package(sensor_msgs REQUIRED)
 
 add_executable(brain
   src/brain.cpp
+  src/event_queue.cpp
   src/state_machine.cpp
   )
 
