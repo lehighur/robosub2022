@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cstdint>
 
 #include "rclcpp/rclcpp.hpp"
@@ -25,7 +26,6 @@ class Brain : public rclcpp::Node {
       StateMachine sm;
       EventQueue eq;
       mc_pub = this->create_publisher<RManualControl>("/mavros/manual_control/control", 10);
-      sm_pub = this->create_publisher<std_msgs::msg::String>("/sm", 10);
       brain_pub = this->create_publisher<std_msgs::msg::String>("/brain", 10);
       //battery_sub = this->create_subscription<sensor_msgs::msg::BatteryState>("/mavros/battery", 10, battery_callback);
     }
@@ -55,16 +55,15 @@ class Brain : public rclcpp::Node {
 
   private:
     StateMachine sm;
-    size_t count;
+    std::size_t count;
     EventQueue eq;
 
     // Publishers
-    rclcpp::Publisher<RString>::SharedPtr sm_pub;
     rclcpp::Publisher<RString>::SharedPtr brain_pub;
     rclcpp::Publisher<RManualControl>::SharedPtr mc_pub;
 
     // Subscribers
-    rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub;
+    //rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub;
 };
 
 int main(int argc, char ** argv) {
