@@ -10,4 +10,5 @@
 // and,
 // https://orenbell.com/?p=436
 StateMachine::StateMachine() : current_state(0) { printf("StateMachine constructor\n"); }
-uint8_t StateMachine::get_state() { return current_state; }
+
+uint8_t StateMachine::get_state() { return this->current_state; }

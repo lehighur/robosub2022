@@ -11,7 +11,6 @@
 // how do I handle double dependencies or
 // does the compiler handle that?
 #include "state_machine.h"
-#include "event_queue.h"
 
 typedef std_msgs::msg::Header RHeader;
 typedef std_msgs::msg::String RString;
@@ -23,35 +22,39 @@ class Brain : public rclcpp::Node {
   public:
     Brain() : Node("Brain"), count(0) {
       printf("Brain constructor\n");
-      StateMachine sm;
-      EventQueue eq;
       mc_pub = this->create_publisher<RManualControl>("/mavros/manual_control/control", 10);
-      brain_pub = this->create_publisher<std_msgs::msg::String>("/brain", 10);
+      brain_pub = this->create_publisher<RString>("/brain", 10);
       //battery_sub = this->create_subscription<sensor_msgs::msg::BatteryState>("/mavros/battery", 10, battery_callback);
+      run_state_machine();
     }
 
-    uint8_t get_state() {
-      return sm.get_state();
+    void run_state_machine() {
+      while (sm.get_state() != STATE::DONE) {
+        Event e = eq.dequeue();
+        process_event(e);
+        // do inside each from above ^^
+        sm.process_event(e);
+      }
     }
 
-  RManualControl create_manual_msg(int x, int y, int z, int r, int buttons) {
-    RManualControl msg;
-    msg.x = x; msg.y = y; msg.z = z;
-    msg.r = r; msg.buttons = buttons;
+    RManualControl create_manual_msg(int x, int y, int z, int r, int buttons) {
+      RManualControl msg;
+      msg.x = x; msg.y = y; msg.z = z;
+      msg.r = r; msg.buttons = buttons;
 
-    //set header
-    RHeader head;
-    head.frame_id = "VECTORED_6DOF";
-    //head.seq = count_;
-    msg.header = head;
+      //set header
+      RHeader head;
+      head.frame_id = "VECTORED_6DOF";
+      //head.seq = count_;
+      msg.header = head;
 
-    return msg;
-  }
+      return msg;
+    }
 
-  bool publish_manual_msg(RManualControl *msg) {
-    mc_pub->publish(*msg);
-    return true;
-  }
+    bool publish_manual_msg(RManualControl *msg) {
+      mc_pub->publish(*msg);
+      return true;
+    }
 
   private:
     StateMachine sm;
@@ -74,6 +77,7 @@ int main(int argc, char ** argv) {
   rclcpp::executors::MultiThreadedExecutor executor;
   auto brain_node = std::make_shared<Brain>();
 
+  printf("before adding and spinning\n");
   executor.add_node(brain_node);
   executor.spin();
 

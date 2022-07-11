@@ -1,7 +1,7 @@
 #include "event_queue.h"
 
 // constructor and destructor
-EventQueue::EventQueue() : queue(), mutex(), condition() {}
+EventQueue::EventQueue() : queue(), mutex(), condition() { printf("EventQueue constructor\n"); }
 
 // add a message to the queue
 void EventQueue::enqueue(Event& e) {
