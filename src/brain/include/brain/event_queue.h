@@ -14,6 +14,7 @@ enum EventType: uint8_t {
 
 struct Event {
   EventType kind;
+  // union
   uint8_t content[8];
 };
 
