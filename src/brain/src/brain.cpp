@@ -22,7 +22,7 @@ class Brain : public rclcpp::Node {
   public:
     Brain() : Node("Brain"), count(0) {
       printf("Brain constructor\n");
-      mc_pub = this->create_publisher<RManualControl>("/mavros/manual_control/control", 10);
+      mc_pub = this->create_publisher<RManualControl>("/mavros/manual_control/send", 10);
       brain_pub = this->create_publisher<RString>("/brain", 10);
       //battery_sub = this->create_subscription<sensor_msgs::msg::BatteryState>("/mavros/battery", 10, battery_callback);
       run_state_machine();
