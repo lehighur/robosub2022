@@ -126,13 +126,13 @@ class Camera {
         return outputs;
     }
 
-    int detect(int frames=0, Net *net, vector<string> *class_list) {
+    int detect(int frames, Net *net, vector<string> *class_list) {
       for (int i = 0; i < frames; ++i) {
         this->capture >> this->frame;
         if (this->frame.empty()) break; // maybe be safer here
         vector<Mat> detections;     // Process the image.
         detections = pre_process(this->frame, *net);
-        Mat img = post_process(this->frame.copy(), &detections, class_list);
+        Mat img = post_process(this->frame.copy(), detections, class_list);
       }
     }
 
@@ -163,15 +163,15 @@ int main(int argc, char **argv) {
 
   // Load class list.
   vector<string> class_list;
-  ifstream ifs("/home/lur/robosub22/model/obj.names");
+  ifstream ifs("/home/lur/model/obj.names");
   string line;
   while (getline(ifs, line)) {
       class_list.push_back(line);
   }
   // Load model.
   Net net;
-  net = readNet("/home/lur/robosub22/model/yolo-obj_final.weights",
-      "/home/lur/robosub22/model/yolo-obj.cfg");
+  net = readNet("/home/lur/model/yolo-obj_final.weights",
+      "/home/lur/model/yolo-obj.cfg");
 
   Camera front(0);
   Camera bottom(4);

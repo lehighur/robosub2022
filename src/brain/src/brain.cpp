@@ -53,19 +53,6 @@ class Brain : public rclcpp::Node {
       //set header
       RHeader head;
       head.frame_id = "VECTORED_6DOF";
-      head.stamp.sec = 1;
-      msg.header = head;
-
-      return msg;
-    }
-
-    RManualControl create_wait_msg(uint32_t time) {
-      RManualControl msg;
-      //set header
-      RHeader head;
-      head.frame_id = "VECTORED_6DOF";
-      head.stamp.sec = 0;
-      head.stamp.nsec = time;
       msg.header = head;
 
       return msg;
@@ -105,16 +92,10 @@ class Brain : public rclcpp::Node {
         //auto message = std_msgs::msg::String();
         //message.data = "Message " + std::to_string(count_++);// + " (x,y,z,r,b): (" + msg.x + "," + msg.y + "," + msg.z + "," + msg.r + "," + msg.buttons + ")";
         //RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
-        if (msg.header.stamp.sec == 0) {
-                RCLCPP_INFO(this->get_logger(), "Waiting");
-          std::this_thread::sleep_for(std::chrono::seconds(msg.header.stamp.sec));
-        }
-        else {
-                RCLCPP_INFO(this->get_logger(), "Publishing");
-                mc_pub->publish(msg);
-        }
+        RCLCPP_INFO(this->get_logger(), "Publishing");
+        mc_pub->publish(msg);
       }
-          else printf("queue empty\n");
+      else printf("queue empty\n");
     }
 };
 
@@ -123,10 +104,10 @@ int main(int argc, char ** argv) {
   rclcpp::init(argc, argv);
   rclcpp::executors::MultiThreadedExecutor executor;
   auto brain_node = std::make_shared<Brain>();
-  RManualControl man_msg;
+  //RManualControl man_msg;
   brain_node->enq(brain_node->create_manual_msg(0, 0, 0, 0, 0));
 
-  ifstream man_file("/home/lur/robosub22/test/man_test.txt");
+  ifstream man_file("/home/lur/man_test.txt");
   if (man_file.is_open()) {
     string line;
     array<int, 5> arr;
@@ -138,9 +119,11 @@ int main(int argc, char ** argv) {
       index = 0;
       while (ss >> word) {
         if (word == "#") {
-          uint32_t time;
+          int time;
           ss >> time;
-          brain_node->enq(brain_node->create_wait_msg(time));
+          for (int i = 0; i < time * 2; ++i) {
+            brain_node->enq(brain_node.front());
+          }
           check = false;
           break;
         }
