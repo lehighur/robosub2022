@@ -25,17 +25,17 @@ class Brain : public rclcpp::Node {
       mc_pub = this->create_publisher<RManualControl>("/mavros/manual_control/send", 10);
       brain_pub = this->create_publisher<RString>("/brain", 10);
       //battery_sub = this->create_subscription<sensor_msgs::msg::BatteryState>("/mavros/battery", 10, battery_callback);
-      run_state_machine();
+      //run_state_machine();
     }
 
-    void run_state_machine() {
-      while (sm.get_state() != STATE::DONE) {
-        Event e = eq.dequeue();
-        process_event(e);
-        // do inside each from above ^^
-        sm.process_event(e);
-      }
-    }
+    //void run_state_machine() {
+    //  while (sm.get_state() != STATE::DONE) {
+    //    Event e = eq.dequeue();
+    //    process_event(e);
+    //    // do inside each from above ^^
+    //    sm.process_event(e);
+    //  }
+    //}
 
     RManualControl create_manual_msg(int x, int y, int z, int r, int buttons) {
       RManualControl msg;

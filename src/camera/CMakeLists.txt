@@ -18,14 +18,28 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(mavros REQUIRED)
+find_package(mavros_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_executable(camera_node src/camera_node.cpp)
+
+target_link_libraries( camera_node ${OpenCV_LIBS} )
 target_include_directories(camera_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(
   camera_node
-  "rclcpp"
+  rclcpp
+  std_msgs
+  mavros
+  mavros_msgs
+  sensor_msgs
 )
 
 install(TARGETS camera_node
