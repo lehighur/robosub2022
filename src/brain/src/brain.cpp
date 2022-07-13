@@ -69,6 +69,10 @@ class Brain : public rclcpp::Node {
       return 0;
     }
 
+    RManualControl get_front() {
+      return q.front();
+    }
+
   private:
     rclcpp::TimerBase::SharedPtr timer;
     StateMachine sm;
@@ -122,7 +126,7 @@ int main(int argc, char ** argv) {
           int time;
           ss >> time;
           for (int i = 0; i < time * 2; ++i) {
-            brain_node->enq(brain_node.front());
+            brain_node->enq(brain_node->get_front());
           }
           check = false;
           break;
