@@ -53,7 +53,6 @@ class Brain : public rclcpp::Node {
       //set header
       RHeader head;
       head.frame_id = "VECTORED_6DOF";
-      //head.seq = count_;
       head.stamp.sec = 1;
       msg.header = head;
 
@@ -62,9 +61,6 @@ class Brain : public rclcpp::Node {
 
     RManualControl create_wait_msg(uint32_t time) {
       RManualControl msg;
-      //set header
-      RHeader head;
-      msg.header = head;
       //set header
       RHeader head;
       head.frame_id = "VECTORED_6DOF";
@@ -124,36 +120,30 @@ class Brain : public rclcpp::Node {
 
 int main(int argc, char ** argv) {
   printf("hello world brain package\n");
-  // this works but look at this for improvements:
-  // https://github.com/ros2/examples/blob/master/rclcpp/executors/multithreaded_executor/multithreaded_executor.cpp
   rclcpp::init(argc, argv);
   rclcpp::executors::MultiThreadedExecutor executor;
   auto brain_node = std::make_shared<Brain>();
   RManualControl man_msg;
-  man_msg.x = 0; man_msg.y = 0; man_msg.z = 0;
-  man_msg.r = 0; man_msg.buttons = 0;
   brain_node->enq(brain_node->create_manual_msg(0, 0, 0, 0, 0));
 
   ifstream man_file("/home/lur/robosub22/test/man_test.txt");
-  if (man_file.is_open())
-  {
+  if (man_file.is_open()) {
     string line;
     array<int, 5> arr;
     int index = 0;
     bool check = true;
-    while ( getline (man_file, line) )
-    {
+    while (getline (man_file, line)) {
       stringstream ss(line);
       string word;
       index = 0;
       while (ss >> word) {
         if (word == "#") {
-	  uint32_t time;
-	  ss >> time;
-	  brain_node->enq(brain_node->create_wait_msg(time));
-	  check = false;
-	  break;
-	}
+          uint32_t time;
+          ss >> time;
+          brain_node->enq(brain_node->create_wait_msg(time));
+          check = false;
+          break;
+        }
         arr[index++] = stoi(word);
       }
       if (check) brain_node->enq(brain_node->create_manual_msg(arr[0], arr[1], arr[2], arr[3], arr[4]));
@@ -168,3 +158,4 @@ int main(int argc, char ** argv) {
 
   rclcpp::shutdown();
   return 0;
+}
