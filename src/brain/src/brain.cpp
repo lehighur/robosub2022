@@ -72,6 +72,9 @@ class Brain : public rclcpp::Node {
     RManualControl get_front() {
       return q.front();
     }
+    RManualControl get_back() {
+      return q.back();
+    }
 
   private:
     rclcpp::TimerBase::SharedPtr timer;
@@ -109,7 +112,7 @@ int main(int argc, char ** argv) {
   rclcpp::executors::MultiThreadedExecutor executor;
   auto brain_node = std::make_shared<Brain>();
   //RManualControl man_msg;
-  brain_node->enq(brain_node->create_manual_msg(0, 0, 0, 0, 0));
+  brain_node->enq(brain_node->create_manual_msg(0, 0, 500, 0, 0));
 
   ifstream man_file("/home/lur/man_test.txt");
   if (man_file.is_open()) {
@@ -126,19 +129,18 @@ int main(int argc, char ** argv) {
           int time;
           ss >> time;
           for (int i = 0; i < time * 2; ++i) {
-            brain_node->enq(brain_node->get_front());
+            brain_node->enq(brain_node->get_back());
           }
-          check = false;
           break;
         }
         arr[index++] = stoi(word);
       }
-      if (check) brain_node->enq(brain_node->create_manual_msg(arr[0], arr[1], arr[2], arr[3], arr[4]));
+      brain_node->enq(brain_node->create_manual_msg(arr[0], arr[1], arr[2], arr[3], arr[4]));
     }
     man_file.close();
   }
   else printf("Unable to open file `man_test.txt`\n");
-  brain_node->enq(brain_node->create_manual_msg(0, 0, 0, 0, 0));
+  brain_node->enq(brain_node->create_manual_msg(0, 0, 500, 0, 0));
 
   executor.add_node(brain_node);
   executor.spin();

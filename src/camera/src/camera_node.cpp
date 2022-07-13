@@ -1,4 +1,6 @@
 #include <cstdio>
+#include <fstream>
+
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/header.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -112,6 +114,7 @@ class Camera {
           // Jump to the next row.
           data += 85;
       }
+    }
 
     vector<Mat> pre_process(Mat &frame, Net &net) {
         // Convert to blob.
@@ -132,7 +135,7 @@ class Camera {
         if (this->frame.empty()) break; // maybe be safer here
         vector<Mat> detections;     // Process the image.
         detections = pre_process(this->frame, *net);
-        Mat img = post_process(this->frame.copy(), detections, class_list);
+        Mat img = post_process(this->frame, detections, *class_list);
       }
     }
 
