@@ -9,6 +9,7 @@
 #include "std_msgs/msg/header.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 #include "mavros_msgs/msg/state.hpp"
 #include "mavros_msgs/msg/manual_control.hpp"
 
@@ -23,6 +24,7 @@ typedef std_msgs::msg::String RString;
 typedef sensor_msgs::msg::BatteryState RBatteryState;
 typedef mavros_msgs::msg::State RState;
 typedef mavros_msgs::msg::ManualControl RManualControl; 
+typedef sensor_msgs::msg::Imu RIMU; 
 
 class Brain : public rclcpp::Node {
   public:
@@ -90,6 +92,7 @@ class Brain : public rclcpp::Node {
 
     // Subscribers
     //rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub;
+    rclcpp::Subscription<RIMU>::SharedPtr imu_sub;
 
     void timer_callback() {
       if (!q.empty()) {
@@ -119,7 +122,6 @@ int main(int argc, char ** argv) {
     string line;
     array<int, 5> arr;
     int index = 0;
-    bool check = true;
     while (getline (man_file, line)) {
       stringstream ss(line);
       string word;

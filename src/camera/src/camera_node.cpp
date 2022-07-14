@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <fstream>
+#include <iostream>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/header.hpp"
@@ -28,7 +29,7 @@ class CameraNode : public rclcpp::Node {
     CameraNode() : Node("Camera") {
       printf("CameraNode constructor\n");
       auto callback = [this](RString::SharedPtr msg) {
-      	this->brain_sub_callback(msg);
+        this->brain_sub_callback(msg);
       };
       camera_pub = this->create_publisher<RString>("/camera", 10);
       brain_sub = this->create_subscription<RString>("/brain", 10, callback);
@@ -64,79 +65,82 @@ class Camera {
     const float NMS_THRESHOLD = 0.45;
     const float CONFIDENCE_THRESHOLD = 0.45;
 
-    Mat post_process(Mat &input_image, vector<Mat> &outputs, const vector<string> &class_name) {
+    void post_process(Mat &input_image, vector<Mat> &outputs, const vector<string> &class_name) {
       // Initialize vectors to hold respective outputs while unwrapping     detections.
       vector<int> class_ids;
       vector<float> confidences;
       // Resizing factor.
-      float x_factor = input_image.cols / INPUT_WIDTH;
-      float y_factor = input_image.rows / INPUT_HEIGHT;
+      //float x_factor = input_image.cols / INPUT_WIDTH;
+      //float y_factor = input_image.rows / INPUT_HEIGHT;
       float *data = (float *)outputs[0].data;
       const int dimensions = 6;
       // 25200 for default size 640.
       const int rows = 25200;
       // Iterate through 25200 detections.
       for (int i = 0; i < rows; ++i) {
-          float confidence = data[4];
-          // Discard bad detections and continue.
-          if (confidence >= CONFIDENCE_THRESHOLD) {
-            printf("found yay\n");
-              float * classes_scores = data + 5;
-              // Create a 1x11 Mat and store class scores of 6 classes.
-              Mat scores(1, class_name.size(), CV_32FC1, classes_scores);
-              // Perform minMaxLoc and acquire the index of best class  score.
-              Point class_id;
-              double max_class_score;
-              minMaxLoc(scores, 0, &max_class_score, 0, &class_id);
-              // Continue if the class score is above the threshold.
-              if (max_class_score > SCORE_THRESHOLD) {
-                  // Store class ID and confidence in the pre-defined respective vectors.
-                  confidences.push_back(confidence);
-                  class_ids.push_back(class_id.x);
-                  // Center.
-                  float cx = data[0];
-                  float cy = data[1];
-                  // Box dimension.
-                  float w = data[2];
-                  float h = data[3];
-                  // Bounding box coordinates.
-                  //int left = int((cx - 0.5 * w) * x_factor);
-                  //int top = int((cy - 0.5 * h) * y_factor);
-                  //int width = int(w * x_factor);
-                  //int height = int(h * y_factor);
-                  // Store good detections in the boxes vector.
-                  //boxes.push_back(Rect(left, top, width, height));
-              }
+        float confidence = data[4];
+        // Discard bad detections and continue.
+        if (confidence >= CONFIDENCE_THRESHOLD) {
+          printf("found yay\n");
+          float * classes_scores = data + 5;
+          // Create a 1x11 Mat and store class scores of 6 classes.
+          Mat scores(1, class_name.size(), CV_32FC1, classes_scores);
+          // Perform minMaxLoc and acquire the index of best class  score.
+          Point class_id;
+          double max_class_score;
+          minMaxLoc(scores, 0, &max_class_score, 0, &class_id);
+          // Continue if the class score is above the threshold.
+          cout << class_id.x << "\n";
+          cout << confidence << "\n";
+          if (max_class_score > SCORE_THRESHOLD) {
+            // Store class ID and confidence in the pre-defined respective vectors.
+            confidences.push_back(confidence);
+            class_ids.push_back(class_id.x);
+            // Center.
+            float cx = data[0];
+            float cy = data[1];
+            // Box dimension.
+            float w = data[2];
+            float h = data[3];
           }
-          else {
-            printf("not found\n");
-          }
-          // Jump to the next row.
-          data += 85;
+        }
+        else {
+          printf("not found\n");
+        }
+        // Jump to the next row.
+        data += 11;
       }
     }
 
     vector<Mat> pre_process(Mat &frame, Net &net) {
-        // Convert to blob.
-        Mat blob;
-        blobFromImage(frame, blob, 1./255., Size(INPUT_WIDTH, INPUT_HEIGHT), Scalar(), true, false);
+      Mat blob;
+      blobFromImage(frame, blob, 1./255., Size(INPUT_WIDTH, INPUT_HEIGHT), Scalar(), true, false);
 
-        net.setInput(blob);
-        // Forward propagate.
-        vector<Mat> outputs;
-        net.forward(outputs, net.getUnconnectedOutLayersNames());
+      net.setInput(blob);
 
-        return outputs;
+      // Forward propagate.
+      vector<Mat> outputs;
+      net.forward(outputs, net.getUnconnectedOutLayersNames());
+
+      return outputs;
     }
 
-    int detect(int frames, Net *net, vector<string> *class_list) {
+    int detect_frames(int frames, Net &net, vector<string> &class_list) {
+      // use frame queue
       for (int i = 0; i < frames; ++i) {
         this->capture >> this->frame;
         if (this->frame.empty()) break; // maybe be safer here
         vector<Mat> detections;     // Process the image.
-        detections = pre_process(this->frame, *net);
-        Mat img = post_process(this->frame, detections, *class_list);
+        detections = pre_process(this->frame, net);
+        post_process(this->frame, detections, class_list);
       }
+      return 0;
+    }
+
+    void detect() {
+    }
+
+    void detect_one(Mat &frame) {
     }
 
     void record_to_file(string path, int frames=900) {
@@ -157,6 +161,25 @@ class Camera {
     int height;
 };
 
+vector<string> load_class_list() {
+  vector<string> class_list;
+  ifstream ifs("/home/lur/model/obj.names");
+  string line;
+  while (getline(ifs, line)) {
+    class_list.push_back(line);
+  }
+  return class_list;
+}
+
+// check if loaded
+void load_net(Net &net) {
+  net = readNet("/home/lur/model/yolo-obj_final.weights",
+      "/home/lur/model/yolo-obj.cfg");
+  //net.setPreferableTarget(DNN_TARGET_CUDA);
+  //net.setPreferableBackend(DNN_BACKEND_CUDA);
+  //net.setPreferableBackend(DNN_BACKEND_OPENCV);
+  //net.setPreferableTarget(DNN_TARGET_CPU);
+}
 
 int main(int argc, char **argv) {
   // hides unused parameter warnings from compiler 
@@ -164,22 +187,14 @@ int main(int argc, char **argv) {
   (void) argv;
   printf("hello world camera package\n");
 
-  // Load class list.
-  vector<string> class_list;
-  ifstream ifs("/home/lur/model/obj.names");
-  string line;
-  while (getline(ifs, line)) {
-      class_list.push_back(line);
-  }
-  // Load model.
+  vector<string> class_list = load_class_list();
   Net net;
-  net = readNet("/home/lur/model/yolo-obj_final.weights",
-      "/home/lur/model/yolo-obj.cfg");
+  load_net(net);
 
   Camera front(0);
   Camera bottom(4);
 
-  front.detect(10, &net, &class_list);
+  front.detect_frames(90, net, class_list);
   //front.record_to_file("/home/lur/test.mp4");
 
   //for(int i = 0; i < 1; ++i)
