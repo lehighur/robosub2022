@@ -142,6 +142,7 @@ int main(int argc, char ** argv) {
     man_file.close();
   }
   else printf("Unable to open file `man_test.txt`\n");
+  // maybe pass all 0s? not sure why it gets disarmed
   brain_node->enq(brain_node->create_manual_msg(0, 0, 500, 0, 0));
 
   executor.add_node(brain_node);
