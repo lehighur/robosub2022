@@ -58,6 +58,11 @@ class Camera {
       height = h;
     }
 
+  // Initialize the parameters
+  float confThreshold = 0.5; // Confidence threshold
+  float nmsThreshold = 0.4;  // Non-maximum suppression threshold
+  int inpWidth = 416;        // Width of network's input image
+  int inpHeight = 416;       // Height of network's input image
     // Constants.
     const float INPUT_WIDTH = 640.0;
     const float INPUT_HEIGHT = 640.0;
@@ -66,50 +71,49 @@ class Camera {
     const float CONFIDENCE_THRESHOLD = 0.45;
 
     void post_process(Mat &input_image, vector<Mat> &outputs, const vector<string> &class_name) {
-      // Initialize vectors to hold respective outputs while unwrapping     detections.
-      vector<int> class_ids;
+      vector<int> classIds;
       vector<float> confidences;
-      // Resizing factor.
-      //float x_factor = input_image.cols / INPUT_WIDTH;
-      //float y_factor = input_image.rows / INPUT_HEIGHT;
-      float *data = (float *)outputs[0].data;
-      const int dimensions = 6;
-      // 25200 for default size 640.
-      const int rows = 25200;
-      // Iterate through 25200 detections.
-      for (int i = 0; i < rows; ++i) {
-        float confidence = data[4];
-        // Discard bad detections and continue.
-        if (confidence >= CONFIDENCE_THRESHOLD) {
-          printf("found yay\n");
-          float * classes_scores = data + 5;
-          // Create a 1x11 Mat and store class scores of 6 classes.
-          Mat scores(1, class_name.size(), CV_32FC1, classes_scores);
-          // Perform minMaxLoc and acquire the index of best class  score.
-          Point class_id;
-          double max_class_score;
-          minMaxLoc(scores, 0, &max_class_score, 0, &class_id);
-          // Continue if the class score is above the threshold.
-          cout << class_id.x << "\n";
-          cout << confidence << "\n";
-          if (max_class_score > SCORE_THRESHOLD) {
-            // Store class ID and confidence in the pre-defined respective vectors.
-            confidences.push_back(confidence);
-            class_ids.push_back(class_id.x);
-            // Center.
-            float cx = data[0];
-            float cy = data[1];
-            // Box dimension.
-            float w = data[2];
-            float h = data[3];
-          }
+      vector<Rect> boxes;
+      
+      for (size_t i = 0; i < outputs.size(); ++i) {
+        // Scan through all the bounding boxes output from the network and keep only the
+        // ones with high confidence scores. Assign the box's class label as the class
+        // with the highest score for the box.
+        float* data = (float*)outputs[i].data;
+        for (int j = 0; j < outputs[i].rows; ++j, data += outputs[i].cols)
+        {
+            Mat scores = outputs[i].row(j).colRange(5, outputs[i].cols);
+            Point classIdPoint;
+            double confidence;
+            // Get the value and location of the maximum score
+            minMaxLoc(scores, 0, &confidence, 0, &classIdPoint);
+            if (confidence > confThreshold)
+            {
+                printf("found %d with confidence %.2f\n", classIdPoint.x, confidence);
+                int centerX = (int)(data[0] * frame.cols);
+                int centerY = (int)(data[1] * frame.rows);
+                int width = (int)(data[2] * frame.cols);
+                int height = (int)(data[3] * frame.rows);
+                int left = centerX - width / 2;
+                int top = centerY - height / 2;
+                
+                classIds.push_back(classIdPoint.x);
+                confidences.push_back((float)confidence);
+                boxes.push_back(Rect(left, top, width, height));
+            }
         }
-        else {
-          printf("not found\n");
-        }
-        // Jump to the next row.
-        data += 11;
-      }
+    }
+    
+    // Perform non maximum suppression to eliminate redundant overlapping boxes with
+    // lower confidences
+    vector<int> indices;
+    NMSBoxes(boxes, confidences, confThreshold, nmsThreshold, indices);
+    for (size_t i = 0; i < indices.size(); ++i) {
+        int idx = indices[i];
+        Rect box = boxes[idx];
+        //drawPred(classIds[idx], confidences[idx], box.x, box.y,
+        //         box.x + box.width, box.y + box.height, frame);
+    }
     }
 
     vector<Mat> pre_process(Mat &frame, Net &net) {
@@ -133,14 +137,39 @@ class Camera {
         vector<Mat> detections;     // Process the image.
         detections = pre_process(this->frame, net);
         post_process(this->frame, detections, class_list);
+        vector<double> layersTimes;
+        double freq = getTickFrequency() / 1000;
+        double t = net.getPerfProfile(layersTimes) / freq;
+        string label = format("Inference time for a frame : %.2f ms", t);
       }
       return 0;
     }
 
-    void detect() {
+    void detect(Net &net, vector<string> &class_list) {
+      while (1) {
+        this->capture >> this->frame;
+        if (this->frame.empty()) break; // maybe be safer here
+        vector<Mat> detections;     // Process the image.
+        detections = pre_process(this->frame, net);
+        post_process(this->frame, detections, class_list);
+        vector<double> layersTimes;
+        double freq = getTickFrequency() / 1000;
+        double t = net.getPerfProfile(layersTimes) / freq;
+        string label = format("Inference time for a frame : %.2f ms", t);
+      }
     }
 
-    void detect_one(Mat &frame) {
+    void detect_one(Mat &frame, Net &net, vector<string> class_list) {
+      this->capture >> this->frame;
+      if (this->frame.empty()) return; // maybe be safer here
+      vector<Mat> detections;     // Process the image.
+      detections = pre_process(this->frame, net);
+      post_process(this->frame, detections, class_list);
+      // Put efficiency information. The function getPerfProfile returns the overall time for inference(t) and the timings for each of the layers(in layersTimes)
+      vector<double> layersTimes;
+      double freq = getTickFrequency() / 1000;
+      double t = net.getPerfProfile(layersTimes) / freq;
+      string label = format("Inference time for a frame : %.2f ms", t);
     }
 
     void record_to_file(string path, int frames=900) {
@@ -194,7 +223,7 @@ int main(int argc, char **argv) {
   Camera front(0);
   Camera bottom(4);
 
-  front.detect_frames(90, net, class_list);
+  front.detect_frames(900, net, class_list);
   //front.record_to_file("/home/lur/test.mp4");
 
   //for(int i = 0; i < 1; ++i)
