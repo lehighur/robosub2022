@@ -5,35 +5,25 @@
 #include <chrono>
 #include <thread>
 
-#include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/header.hpp"
-#include "std_msgs/msg/string.hpp"
-#include "sensor_msgs/msg/battery_state.hpp"
-#include "sensor_msgs/msg/imu.hpp"
-#include "mavros_msgs/msg/state.hpp"
-#include "mavros_msgs/msg/manual_control.hpp"
-
 // how do I handle double dependencies or
 // does the compiler handle that?
 #include "state_machine.h"
+#include "ts_queue.h"
+#include "common.h"
 
 using namespace std;
 
-typedef std_msgs::msg::Header RHeader;
-typedef std_msgs::msg::String RString;
-typedef sensor_msgs::msg::BatteryState RBatteryState;
-typedef mavros_msgs::msg::State RState;
-typedef mavros_msgs::msg::ManualControl RManualControl; 
-typedef sensor_msgs::msg::Imu RIMU; 
-
 class Brain : public rclcpp::Node {
   public:
-    Brain() : Node("Brain"), count(0) {
+    TSQueue<lur::RManualControl> q;
+    StateMachine sm;
+
+    Brain() : Node("Brain"), q(), count(0) {
       printf("Brain constructor\n");
-      mc_pub = this->create_publisher<RManualControl>("/mavros/manual_control/send", 10);
-      brain_pub = this->create_publisher<RString>("/brain", 10);
-      q = queue<RManualControl>(); 
+      mc_pub = this->create_publisher<lur::RManualControl>("/mavros/manual_control/send", 10);
+      brain_pub = this->create_publisher<lur::RString>("/brain", 10);
       //battery_sub = this->create_subscription<sensor_msgs::msg::BatteryState>("/mavros/battery", 10, battery_callback);
+      //imu_sub = this->create_subscription<lur::RImu>("/mavros/imu/data", 10, imu_callback);
       //run_state_machine();
       timer = this->create_wall_timer(500ms, std::bind(&Brain::timer_callback, this));
     }
@@ -47,58 +37,42 @@ class Brain : public rclcpp::Node {
     //  }
     //}
 
-    RManualControl create_manual_msg(int x, int y, int z, int r, int buttons) {
-      RManualControl msg;
+    lur::RManualControl create_manual_msg(int x, int y, int z, int r, int buttons) {
+      lur::RManualControl msg;
       msg.x = x; msg.y = y; msg.z = z;
       msg.r = r; msg.buttons = buttons;
 
       //set header
-      RHeader head;
+      lur::RHeader head;
       head.frame_id = "VECTORED_6DOF";
       msg.header = head;
 
       return msg;
     }
 
-    bool publish_manual_msg(RManualControl *msg) {
+    bool publish_manual_msg(lur::RManualControl *msg) {
       mc_pub->publish(*msg);
       return true;
     }
 
-    // check and return 1 if added
-    int enq(RManualControl msg) {
-      q.push(msg);
-      return 0;
-    }
-
-    RManualControl get_front() {
-      return q.front();
-    }
-    RManualControl get_back() {
-      return q.back();
-    }
-
   private:
     rclcpp::TimerBase::SharedPtr timer;
-    StateMachine sm;
     std::size_t count;
-    EventQueue eq;
     // temporary
-    queue<RManualControl> q;
+    //queue<lur::RManualControl> q;
 
     // Publishers
-    rclcpp::Publisher<RString>::SharedPtr brain_pub;
-    rclcpp::Publisher<RManualControl>::SharedPtr mc_pub;
+    rclcpp::Publisher<lur::RString>::SharedPtr brain_pub;
+    rclcpp::Publisher<lur::RManualControl>::SharedPtr mc_pub;
 
     // Subscribers
     //rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub;
-    rclcpp::Subscription<RIMU>::SharedPtr imu_sub;
+    rclcpp::Subscription<lur::RImu>::SharedPtr imu_sub;
 
     void timer_callback() {
       if (!q.empty()) {
-        RManualControl msg;
-        msg = q.front();
-        q.pop();
+        lur::RManualControl msg;
+        msg = q.dequeue();
         //auto message = std_msgs::msg::String();
         //message.data = "Message " + std::to_string(count_++);// + " (x,y,z,r,b): (" + msg.x + "," + msg.y + "," + msg.z + "," + msg.r + "," + msg.buttons + ")";
         //RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
@@ -115,7 +89,7 @@ int main(int argc, char ** argv) {
   rclcpp::executors::MultiThreadedExecutor executor;
   auto brain_node = std::make_shared<Brain>();
   //RManualControl man_msg;
-  brain_node->enq(brain_node->create_manual_msg(0, 0, 500, 0, 0));
+  brain_node->q.enqueue(brain_node->create_manual_msg(0, 0, 500, 0, 0));
 
   ifstream man_file("/home/lur/man_test.txt");
   if (man_file.is_open()) {
@@ -131,19 +105,19 @@ int main(int argc, char ** argv) {
           int time;
           ss >> time;
           for (int i = 0; i < time * 2; ++i) {
-            brain_node->enq(brain_node->get_back());
+            brain_node->q.enqueue(brain_node->q.back());
           }
           break;
         }
         arr[index++] = stoi(word);
       }
-      brain_node->enq(brain_node->create_manual_msg(arr[0], arr[1], arr[2], arr[3], arr[4]));
+      brain_node->q.enqueue(brain_node->create_manual_msg(arr[0], arr[1], arr[2], arr[3], arr[4]));
     }
     man_file.close();
   }
   else printf("Unable to open file `man_test.txt`\n");
   // maybe pass all 0s? not sure why it gets disarmed
-  brain_node->enq(brain_node->create_manual_msg(0, 0, 500, 0, 0));
+  brain_node->q.enqueue(brain_node->create_manual_msg(0, 0, 500, 0, 0));
 
   executor.add_node(brain_node);
   executor.spin();

@@ -17,13 +17,13 @@ find_package(sensor_msgs REQUIRED)
 
 add_executable(brain
   src/brain.cpp
-  src/event_queue.cpp
   src/state_machine.cpp
   )
 
 target_include_directories(brain PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/brain>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:include>
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
 target_compile_features(brain PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
 ament_target_dependencies(
