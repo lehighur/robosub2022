@@ -31,7 +31,7 @@ namespace lur {
 
   // use a steady clock instead or something from ros?
   typedef std::chrono::time_point<std::chrono::system_clock> Timestamp;
-  Timestamp now(){return std::chrono::system_clock::now();}
+  inline Timestamp now(){return std::chrono::system_clock::now();}
 
   // generic event type used in communication
   // might also need to create a custom ros msg

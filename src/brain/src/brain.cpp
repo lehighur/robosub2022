@@ -23,7 +23,7 @@ class Brain : public rclcpp::Node {
       mc_pub = this->create_publisher<lur::RManualControl>("/mavros/manual_control/send", 10);
       brain_pub = this->create_publisher<lur::RString>("/brain", 10);
       //battery_sub = this->create_subscription<sensor_msgs::msg::BatteryState>("/mavros/battery", 10, battery_callback);
-      //imu_sub = this->create_subscription<lur::RImu>("/mavros/imu/data", 10, imu_callback);
+      imu_sub = this->create_subscription<lur::RImu>("/mavros/imu/data", 10, imu_callback);
       //run_state_machine();
       timer = this->create_wall_timer(500ms, std::bind(&Brain::timer_callback, this));
     }
@@ -69,6 +69,9 @@ class Brain : public rclcpp::Node {
     // Subscribers
     //rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub;
     rclcpp::Subscription<lur::RImu>::SharedPtr imu_sub;
+
+    void imu_callback(lur::RImu) {
+    }
 
     void timer_callback() {
       if (!q.empty()) {

@@ -12,11 +12,9 @@
 // https://orenbell.com/?p=436
 StateMachine::StateMachine() : current_state(0) { printf("StateMachine constructor\n"); }
 
-uint8_t StateMachine::get_state() { return this->current_state; }
+STATE StateMachine::get_state() { return this->current_state; }
 
-void StateMachine::set_state(STATE s) { this->current_state = s; }
-
-int StateMachine::run() {
+void StateMachine::run() {
   while (this->current_state != STATE::DONE) {
     switch (this->current_state) {
       case 0:
@@ -32,5 +30,4 @@ int StateMachine::run() {
         break;
     }
   }
-  return 0;
 }

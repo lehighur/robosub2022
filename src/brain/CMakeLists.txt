@@ -18,6 +18,7 @@ find_package(sensor_msgs REQUIRED)
 add_executable(brain
   src/brain.cpp
   src/state_machine.cpp
+  src/qual.cpp
   )
 
 target_include_directories(brain PUBLIC

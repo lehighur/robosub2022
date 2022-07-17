@@ -1,16 +1,17 @@
 #include "qual.h"
 
-Qual::Qual() : TSQueue(), current_state(0) { printf("Qual constructor\n"); }
+Qual::Qual() : q(), current_state(0) { printf("Qual constructor\n"); }
+
 QUAL_STATE Qual::get_state() {
-  return this->current_state;
+  return (QUAL_STATE)this->current_state;
 }
 
-int process_event(lur::Event) {
+int Qual::process_event(lur::Event) {
   return 0;
 }
 
-void run() {
-  while (this->current_state != QUAL_STATE::DONE) {
+void Qual::run() {
+  while (this->current_state != QUAL_STATE::QUAL_DONE) {
     switch (this->current_state) {
       case 0:
         // QUAL_STATE::START
@@ -39,13 +40,3 @@ void run() {
     }
   }
 }
-enum QUAL_STATE: uint8_t {
-  START,
-  GATE_DETECTED,
-  APPROACH,
-  THROUGH,
-  TURN,
-  BACK,
-  LEAVE,
-  DONE,
-};

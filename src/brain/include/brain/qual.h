@@ -10,7 +10,7 @@ enum QUAL_STATE: uint8_t {
   TURN,
   BACK,
   LEAVE,
-  DONE,
+  QUAL_DONE,
 };
 
 class Qual {
