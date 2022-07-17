@@ -1,9 +1,14 @@
 #include "qual.h"
 
-Qual::Qual() : current_state(0) { printf("Qual constructor\n"); }
+Qual::Qual() : TSQueue(), current_state(0) { printf("Qual constructor\n"); }
 QUAL_STATE Qual::get_state() {
   return this->current_state;
 }
+
+int process_event(lur::Event) {
+  return 0;
+}
+
 void run() {
   while (this->current_state != QUAL_STATE::DONE) {
     switch (this->current_state) {

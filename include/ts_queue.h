@@ -7,8 +7,9 @@
 
 template<class T>
 class TSQueue {
+
+  // need to double check logic
   public:
-    // constructor and destructor
     TSQueue(): q(), mtx(), cv() { printf("EventQueue constructor\n"); };
 
     void enqueue(T e) {
@@ -25,30 +26,43 @@ class TSQueue {
       return e;
     };
 
+    // probably don't ever want to use this
+    int pop() {
+      std::unique_lock<std::mutex> lck(mtx);
+      if (q.empty()) {
+        return -1;
+      }
+      q.pop();
+      return 0;
+    };
+
     int size() {
+      std::unique_lock<std::mutex> lck(mtx);
       return q.size();
     };
 
     T front() {
+      std::unique_lock<std::mutex> lck(mtx);
+      cv.wait(lck, [this]{return !q.empty();});
       return q.front();
     };
 
     T back() {
+      std::unique_lock<std::mutex> lck(mtx);
+      cv.wait(lck, [this]{return !q.empty();});
       return q.back();
     };
 
-    void pop() {
-      q.pop();
-    };
 
     bool empty() {
+      std::unique_lock<std::mutex> lck(mtx);
       return q.empty();
     };
 
   private:
     std::queue<T> q;
-    mutable std::mutex mtx;			// the mutex (basically telling which thread is allowed to access the queue)
-    std::condition_variable cv;	// block the calling thread until notified to resume
+    mutable std::mutex mtx;
+    std::condition_variable cv;
 };
 
 #endif
