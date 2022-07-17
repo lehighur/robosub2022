@@ -34,6 +34,7 @@ namespace lur {
   Timestamp now(){return std::chrono::system_clock::now();}
 
   // generic event type used in communication
+  // might also need to create a custom ros msg
   struct Event {
     uint8_t id;
     std::string message;

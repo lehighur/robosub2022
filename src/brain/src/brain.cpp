@@ -37,6 +37,7 @@ class Brain : public rclcpp::Node {
     //  }
     //}
 
+    // @@ use custom messages and services?
     lur::RManualControl create_manual_msg(int x, int y, int z, int r, int buttons) {
       lur::RManualControl msg;
       msg.x = x; msg.y = y; msg.z = z;

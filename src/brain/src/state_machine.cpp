@@ -29,8 +29,7 @@ int StateMachine::run() {
         // STATE::QUAL
         Qual qual;
         qual.run();
-
-        
+        break;
     }
   }
   return 0;
