@@ -14,6 +14,7 @@
 #include "sensor_msgs/msg/temperature.hpp"
 #include "mavros_msgs/msg/state.hpp"
 #include "mavros_msgs/msg/manual_control.hpp"
+#include "mavros_msgs/srv/set_mode.hpp"
 
 // lur headers
 #include "ts_queue.h"
@@ -26,6 +27,7 @@ namespace lur {
   // ROS2 message types
   typedef std_msgs::msg::Header            RHeader;
   typedef std_msgs::msg::String            RString;
+  typedef mavros_msgs::srv::SetMode        RSetMode;
   typedef sensor_msgs::msg::BatteryState   RBatteryState;
   typedef mavros_msgs::msg::State          RState;
   typedef mavros_msgs::msg::ManualControl  RManualControl; 
