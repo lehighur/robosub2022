@@ -21,7 +21,6 @@
 // lur namespace
 // contains constants and type definitions
 namespace lur {
-  using std::placeholders::_1;
 
   inline constexpr double pi { 3.14159 };
   // ROS2 message types

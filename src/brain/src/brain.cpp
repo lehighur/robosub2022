@@ -12,6 +12,7 @@
 #include "common.h"
 
 using namespace std;
+using std::placeholders::_1;
 
 class Brain : public rclcpp::Node {
   public:
@@ -20,7 +21,7 @@ class Brain : public rclcpp::Node {
       mc_pub = this->create_publisher<lur::RManualControl>("/mavros/manual_control/send", 10);
       //brain_pub = this->create_publisher<lur::RString>("/brain", 10);
       imu_sub = this->create_subscription<lur::RImu>("/mavros/imu/data", 10, std::bind(&Brain::imu_callback, this, _1));
-      test_mc_sub = this->create_subscription<lur::RManualControl>("/lur/test/manual_control", 10, std::bind(&Brain::test_mc_callback, this, _1);
+      test_mc_sub = this->create_subscription<lur::RManualControl>("/lur/test/manual_control", 10, std::bind(&Brain::test_mc_callback, this, _1));
       //run_state_machine();
       timer = this->create_wall_timer(500ms, std::bind(&Brain::timer_callback, this));
     }
@@ -132,7 +133,7 @@ class Brain : public rclcpp::Node {
         //message.data = "Message " + std::to_string(count_++);// + " (x,y,z,r,b): (" + msg.x + "," + msg.y + "," + msg.z + "," + msg.r + "," + msg.buttons + ")";
         //RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
         RCLCPP_INFO(this->get_logger(), "Publishing");
-        mc_pub->publish(q.dequeue());
+        mc_pub->publish(*q.dequeue());
       }
       else printf("queue empty\n");
     }

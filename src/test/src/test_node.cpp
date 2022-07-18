@@ -10,18 +10,21 @@ using namespace std;
 
 class Test : public rclcpp::Node {
   public:
-    Test() : Node("Test"), q() { }
+    Test() : Node("Test"), q() {
+      test_mc_pub = this->create_publisher<lur::RManualControl>("/lur/test/manual_control", 10);
+      timer = this->create_wall_timer(500ms, std::bind(&Test::publish_queue, this));
+    }
 
     void run_man_test(string path) {
       q.enqueue(lur::create_manual_msg(0, 0, 500, 0, 0));
       read_man_test_file(path);
       // maybe pass all 0s? not sure why it gets disarmed
       q.enqueue(lur::create_manual_msg(0, 0, 500, 0, 0));
-      publish_file_queue();
     }
 
-    void publish_file_queue() {
+    void publish_queue() {
       while (!q.empty()) {
+        printf("publishing\n");
         test_mc_pub->publish(q.dequeue());
       }
     }
@@ -57,6 +60,7 @@ class Test : public rclcpp::Node {
   private:
     TSQueue<lur::RManualControl> q;
     rclcpp::Publisher<lur::RManualControl>::SharedPtr test_mc_pub;
+    rclcpp::TimerBase::SharedPtr timer;
 };
 
 int main(int argc, char ** argv)
@@ -67,6 +71,7 @@ int main(int argc, char ** argv)
   printf("test node\n");
   rclcpp::init(argc, argv);
   auto test_node = std::make_shared<Test>();
+  test_node->run_man_test("/robosub/src/test/src/man_test.txt");
   rclcpp::spin(test_node);
   rclcpp::shutdown();
   return 0;
