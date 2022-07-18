@@ -1,0 +1,76 @@
+# example.launch.yaml
+
+launch:
+
+# args that can be set from the command line or a default will be used
+- arg:
+    name: "background_r"
+    default: "0"
+- arg:
+    name: "background_g"
+    default: "255"
+- arg:
+    name: "background_b"
+    default: "0"
+- arg:
+    name: "chatter_ns"
+    default: "my/chatter/ns"
+
+# start a turtlesim_node in the turtlesim1 namespace
+- node:
+    pkg: "mavros"
+    exec: "mavros_node"
+    param:
+    -
+        name: "fcu_url"
+        value: "/dev/ttyACM2:115200"
+    -
+        name: "gcs_url"
+        value: "tcp-l://:11520"
+    -
+        name: "tgt_system"
+        value: 1
+    -
+        name: "tgt_component"
+        value : 1
+    -
+        name: "system_id"
+        value: 1
+    -
+        name: "component_id"
+        value: 240
+- node:
+    pkg: "brain"
+    exec: "brain_node"
+#- node:
+#    pkg: "camera"
+#    exec: "camera_node"
+# start another turtlesim_node in the turtlesim2 namespace and use args to set parameters
+#- node:
+#    pkg: "manual_pubsub"
+#    exec: "talker"
+#    name: "talker_node"
+#    namespace: "manual_pubsub"
+    #    param:
+    #    -
+    #      name: "background_r"
+    #      value: "$(var background_r)"
+    #    -
+    #      name: "background_g"
+    #      value: "$(var background_g)"
+    #    -
+    #      name: "background_b"
+    #      value: "$(var background_b)"
+
+# perform remap so both turtles listen to the same command topic
+#- node:
+#    pkg: "turtlesim"
+#    exec: "mimic"
+#    name: "mimic"
+#    remap:
+#    -
+#        from: "/input/pose"
+#        to: "/turtlesim1/turtle1/pose"
+#    -
+#        from: "/output/cmd_vel"
+#        to: "/turtlesim2/turtle1/cmd_vel"

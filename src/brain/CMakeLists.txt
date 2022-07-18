@@ -16,7 +16,7 @@ find_package(mavros_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 add_executable(brain
-  src/brain.cpp
+  src/brain_node.cpp
   src/state_machine.cpp
   src/qual.cpp
   )
