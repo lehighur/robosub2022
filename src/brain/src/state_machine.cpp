@@ -12,7 +12,7 @@
 // https://orenbell.com/?p=436
 StateMachine::StateMachine() : current_state(0) { printf("StateMachine constructor\n"); }
 
-STATE StateMachine::get_state() { return this->current_state; }
+STATE StateMachine::get_state() { return (STATE)this->current_state; }
 
 void StateMachine::run() {
   while (this->current_state != STATE::DONE) {

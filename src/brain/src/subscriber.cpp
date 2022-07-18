@@ -1,17 +1,16 @@
 #include <cstdio>
 #include <chrono>
 
-#include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
+#include "common.h"
 
 class Subscriber : public rclcpp::Node {
 public:
   Subscriber() : Node("Subscriber") {
-    auto callback = [this](std_msgs::msg::String::SharedPtr msg) {
+    auto callback = [this](lur::RString msg) {
         this->topic_callback(msg);
       };
 
-    subscription_ = this->create_subscription<std_msgs::msg::String>("/sm", 10, callback);
+    subscription_ = this->create_subscription<std_msgs::msg::String>("/sm", 10, topic_callback);
   }
 
 private:

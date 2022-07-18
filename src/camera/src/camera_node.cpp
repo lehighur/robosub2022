@@ -32,7 +32,7 @@ class CameraNode : public rclcpp::Node {
         this->brain_sub_callback(msg);
       };
       camera_pub = this->create_publisher<RString>("/camera", 10);
-      brain_sub = this->create_subscription<RString>("/brain", 10, callback);
+      brain_sub = this->create_subscription<RString>("/brain", 10, std::bind(&MinimalSubscriber::brain_sub_callback, this, _1));
     }
   private:
     rclcpp::Publisher<RString>::SharedPtr camera_pub;
