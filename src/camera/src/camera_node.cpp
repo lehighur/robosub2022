@@ -2,43 +2,34 @@
 #include <fstream>
 #include <iostream>
 
-#include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/header.hpp"
-#include "std_msgs/msg/string.hpp"
-#include "sensor_msgs/msg/battery_state.hpp"
-#include "mavros_msgs/msg/state.hpp"
-#include "mavros_msgs/msg/manual_control.hpp"
 #include "opencv2/core.hpp"
 #include "opencv2/opencv.hpp"
 // don't think this is needed for just the reader
 // only the writer
 #include "opencv2/videoio.hpp"
 
+#include "common.h"
+
 using namespace std;
 using namespace cv;
 using namespace cv::dnn;
-
-typedef std_msgs::msg::Header RHeader;
-typedef std_msgs::msg::String RString;
-typedef sensor_msgs::msg::BatteryState RBatteryState;
-typedef mavros_msgs::msg::State RState;
-typedef mavros_msgs::msg::ManualControl RManualControl; 
 
 class CameraNode : public rclcpp::Node {
   public:
     CameraNode() : Node("Camera") {
       printf("CameraNode constructor\n");
-      auto callback = [this](RString::SharedPtr msg) {
+      auto callback = [this](lur::RString::SharedPtr msg) {
         this->brain_sub_callback(msg);
       };
-      camera_pub = this->create_publisher<RString>("/camera", 10);
-      brain_sub = this->create_subscription<RString>("/brain", 10, std::bind(&MinimalSubscriber::brain_sub_callback, this, _1));
+      camera_pub = this->create_publisher<lur::RString>("/camera", 10);
+      brain_sub = this->create_subscription<lur::RString>("/brain", 10, std::bind(&MinimalSubscriber::brain_sub_callback, this, _1));
     }
   private:
-    rclcpp::Publisher<RString>::SharedPtr camera_pub;
-    rclcpp::Subscription<RString>::SharedPtr brain_sub;
+    // make custom type for publisher
+    rclcpp::Publisher<lur::RString>::SharedPtr camera_pub;
+    rclcpp::Subscription<lur::RString>::SharedPtr brain_sub;
 
-    void brain_sub_callback(const RString::SharedPtr msg) {
+    void brain_sub_callback(const lur::RString::SharedPtr msg) {
       printf("brain_sub_callback\n");
       printf("String: %s\n", msg->data.c_str());
     }

@@ -14,21 +14,28 @@ find_package(std_msgs REQUIRED)
 find_package(mavros REQUIRED)
 find_package(mavros_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(brain REQUIRED)
+#find_package(rosidl_default_generators REQUIRED)
+#find_package(brain REQUIRED)
+#
+#rosidl_generate_interfaces(${PROJECT_NAME}
+#  "msg/Camera.msg"
+#)
 
-add_executable(brain
+add_executable(brain_node
   src/brain_node.cpp
   src/state_machine.cpp
   src/qual.cpp
   )
 
-target_include_directories(brain PUBLIC
+target_include_directories(brain_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/brain>
   $<INSTALL_INTERFACE:include>
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
-target_compile_features(brain PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(brain_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
 ament_target_dependencies(
-  brain
+  brain_node
   rclcpp
   std_msgs
   mavros
@@ -36,7 +43,7 @@ ament_target_dependencies(
   sensor_msgs
 )
 
-install(TARGETS brain
+install(TARGETS brain_node
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

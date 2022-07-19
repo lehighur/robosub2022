@@ -21,6 +21,7 @@ class Brain : public rclcpp::Node {
       mc_pub = this->create_publisher<lur::RManualControl>("/mavros/manual_control/send", 10);
       //brain_pub = this->create_publisher<lur::RString>("/brain", 10);
       imu_sub = this->create_subscription<lur::RImu>("/mavros/imu/data", 10, std::bind(&Brain::imu_callback, this, _1));
+      cam_sub = this->create_subscription<lur::RImu>("/camera", 10, std::bind(&Brain::cam_callback, this, _1));
       test_mc_sub = this->create_subscription<lur::RManualControl>("/lur/test/manual_control", 10, std::bind(&Brain::test_mc_callback, this, _1));
       //run_state_machine();
       timer = this->create_wall_timer(500ms, std::bind(&Brain::timer_callback, this));
@@ -59,9 +60,10 @@ class Brain : public rclcpp::Node {
     // Subscribers
     //rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub;
     rclcpp::Subscription<lur::RImu>::SharedPtr            imu_sub;
+    rclcpp::Subscription<lur::RString>::SharedPtr         cam_sub;
     rclcpp::Subscription<lur::RManualControl>::SharedPtr  test_mc_sub;
 
-    void imu_callback(lur::RImu::SharedPtr msg) {
+    void imu_callback(const lur::RImu::SharedPtr msg) {
       // geometry_messages/Quaternion
       // x y z w
       // # This represents an orientation in free space in quaternion form.
@@ -87,7 +89,13 @@ class Brain : public rclcpp::Node {
       //msg->linear_acceleration
     }
 
-    void mag_callback(lur::RMag::SharedPtr msg) {
+    void cam_callback(const lur::RString::SharedPtr msg) {
+      // make custom ros msg type
+      // detections and locations
+      // edge detection
+    }
+
+    void mag_callback(const lur::RMag::SharedPtr msg) {
       // # Measurement of the Magnetic Field vector at a specific location.
       //
       // # If the covariance of the measurement is known, it should be filled in
@@ -112,7 +120,7 @@ class Brain : public rclcpp::Node {
       //                                      # 0 is interpreted as variance unknown
     }
 
-    void temp_callback(lur::RTemperature::SharedPtr msg) {
+    void temp_callback(const lur::RTemperature::SharedPtr msg) {
       //# Single temperature reading.
 
       //Header header           # timestamp is the time the temperature was measured
@@ -123,7 +131,7 @@ class Brain : public rclcpp::Node {
       //float64 variance        # 0 is interpreted as variance unknown
     }
 
-    void test_mc_callback(lur::RManualControl::SharedPtr msg) {
+    void test_mc_callback(const lur::RManualControl::SharedPtr msg) {
       q.enqueue(msg);
     }
 

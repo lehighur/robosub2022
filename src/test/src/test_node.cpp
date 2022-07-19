@@ -60,7 +60,7 @@ class Test : public rclcpp::Node {
       // Wait for the result.
       if (rclcpp::spin_until_future_complete(node, result) == rclcpp::FutureReturnCode::SUCCESS) {
         printf("%s", result.get()->mode_sent ? "true" : "false");
-        return results.get()->mode_sent;
+        return result.get()->mode_sent;
       }
       else {
         printf("Failed to call service set_mode");
@@ -130,9 +130,9 @@ int main(int argc, char ** argv)
       //uint8 MAV_MODE_MANUAL_ARMED = 192
       //uint8 MAV_MODE_GUIDED_DISARMED = 88
       //uint8 MAV_MODE_GUIDED_ARMED = 216
-  test_node.set_mode("MAV_MODE_STABILIZE_ARMED");
-  //test_node.set_mode("MAV_MODE_MANUAL_ARMED");
-  //test_node.set_mode("MAV_MODE_GUIDED_ARMED");
+  bool set_check = test_node->set_mode("MAV_MODE_STABILIZE_ARMED");
+  //test_node->set_mode("MAV_MODE_MANUAL_ARMED");
+  //test_node->set_mode("MAV_MODE_GUIDED_ARMED");
   test_node->run_man_test("/robosub/src/test/src/man_test.txt");
   rclcpp::spin(test_node);
   rclcpp::shutdown();
