@@ -14,7 +14,6 @@ find_package(std_msgs REQUIRED)
 find_package(mavros REQUIRED)
 find_package(mavros_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(brain REQUIRED)
 #find_package(rosidl_default_generators REQUIRED)
 #find_package(brain REQUIRED)
 #
