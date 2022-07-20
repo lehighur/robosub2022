@@ -36,6 +36,7 @@ class Brain : public rclcpp::Node {
     //  }
     //}
 
+    // could make this an action server or a service
     bool publish_manual_msg(lur::RManualControl::SharedPtr msg) {
       mc_pub->publish(*msg);
       return true;
