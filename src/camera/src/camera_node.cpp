@@ -13,6 +13,7 @@
 using namespace std;
 using namespace cv;
 using namespace cv::dnn;
+using std::placeholders::_1;
 
 class CameraNode : public rclcpp::Node {
   public:
@@ -22,7 +23,7 @@ class CameraNode : public rclcpp::Node {
         this->brain_sub_callback(msg);
       };
       camera_pub = this->create_publisher<lur::RString>("/camera", 10);
-      brain_sub = this->create_subscription<lur::RString>("/brain", 10, std::bind(&MinimalSubscriber::brain_sub_callback, this, _1));
+      brain_sub = this->create_subscription<lur::RString>("/brain", 10, std::bind(&CameraNode::brain_sub_callback, this, _1));
     }
   private:
     // make custom type for publisher

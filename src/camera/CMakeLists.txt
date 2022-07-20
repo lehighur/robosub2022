@@ -32,7 +32,8 @@ add_executable(camera_node src/camera_node.cpp)
 target_link_libraries( camera_node ${OpenCV_LIBS} )
 target_include_directories(camera_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:include>
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
 ament_target_dependencies(
   camera_node
   rclcpp

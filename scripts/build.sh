@@ -13,4 +13,5 @@ colcon build
 
 echo ""
 echo "run '. install/local_setup.bash'"
+echo "or  '. install/setup.bash'"
 echo ""
