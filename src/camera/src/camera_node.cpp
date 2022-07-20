@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include "opencv2/core.hpp"
 #include "opencv2/opencv.hpp"
@@ -79,19 +80,23 @@ class Camera {
             double confidence;
             // Get the value and location of the maximum score
             minMaxLoc(scores, 0, &confidence, 0, &classIdPoint);
-            if (confidence > confThreshold)
-            {
-                printf("found %d with confidence %.2f\n", classIdPoint.x, confidence);
-                int centerX = (int)(data[0] * frame.cols);
-                int centerY = (int)(data[1] * frame.rows);
-                int width = (int)(data[2] * frame.cols);
-                int height = (int)(data[3] * frame.rows);
-                int left = centerX - width / 2;
-                int top = centerY - height / 2;
-                
-                classIds.push_back(classIdPoint.x);
-                confidences.push_back((float)confidence);
-                boxes.push_back(Rect(left, top, width, height));
+            if (confidence > confThreshold) {
+              int centerX = (int)(data[0] * frame.cols);
+              int centerY = (int)(data[1] * frame.rows);
+              int width = (int)(data[2] * frame.cols);
+              int height = (int)(data[3] * frame.rows);
+              int left = centerX - width / 2;
+              int top = centerY - height / 2;
+              
+              classIds.push_back(classIdPoint.x);
+              confidences.push_back((float)confidence);
+              boxes.push_back(Rect(left, top, width, height));
+              //lur::RString msg;
+              // doesn't work
+              // string x = sprintf("\nfound %d with confidence %.2f\ncenter coordinates: %d, %d\n\n", classIdPoint.x, confidence, centerX, centerY);
+              printf("\nfound %d with confidence %.2f\ncenter coordinates: %d, %d\n\n", classIdPoint.x, confidence, centerX, centerY);
+              //msg.data = x;
+              //camera_pub->publish(msg);
             }
         }
     }
@@ -133,6 +138,7 @@ class Camera {
         double freq = getTickFrequency() / 1000;
         double t = net.getPerfProfile(layersTimes) / freq;
         string label = format("Inference time for a frame : %.2f ms", t);
+        cout << label << "\n";
       }
       return 0;
     }
@@ -148,6 +154,7 @@ class Camera {
         double freq = getTickFrequency() / 1000;
         double t = net.getPerfProfile(layersTimes) / freq;
         string label = format("Inference time for a frame : %.2f ms", t);
+        cout << label << "\n";
       }
     }
 
@@ -162,6 +169,7 @@ class Camera {
       double freq = getTickFrequency() / 1000;
       double t = net.getPerfProfile(layersTimes) / freq;
       string label = format("Inference time for a frame : %.2f ms", t);
+        cout << label << "\n";
     }
 
     void record_to_file(string path, int frames=900) {
