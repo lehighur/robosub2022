@@ -40,8 +40,8 @@ class Test : public rclcpp::Node {
       //---
       //bool mode_sent # Mode known/parsed correctly and SET_MODE are sent
 
-      std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("Set Mode");
-      rclcpp::Client<lur::RSetMode>::SharedPtr client = node->create_client<lur::RSetMode>("Set Mode");
+      std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("SetMode");
+      rclcpp::Client<lur::RSetMode>::SharedPtr client = node->create_client<lur::RSetMode>("SetMode");
       auto request = std::make_shared<lur::RSetMode::Request>();
       //request->custom_mode = "MAV_MODE_MANUAL_ARMED";
       request->custom_mode = mode;
@@ -130,7 +130,7 @@ int main(int argc, char ** argv)
       //uint8 MAV_MODE_MANUAL_ARMED = 192
       //uint8 MAV_MODE_GUIDED_DISARMED = 88
       //uint8 MAV_MODE_GUIDED_ARMED = 216
-  bool set_check = test_node->set_mode("MAV_MODE_STABILIZE_ARMED");
+  //bool set_check = test_node->set_mode("MAV_MODE_STABILIZE_ARMED");
   //test_node->set_mode("MAV_MODE_MANUAL_ARMED");
   //test_node->set_mode("MAV_MODE_GUIDED_ARMED");
   test_node->run_man_test("/robosub/src/test/src/man_test.txt");
