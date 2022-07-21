@@ -9,9 +9,11 @@
 
 rosdep install -i --from-path src --rosdistro foxy -y
 
-colcon build
+colcon build --packages-select lur_pkg
 
 echo ""
 echo "run '. install/local_setup.bash'"
 echo "or  '. install/setup.bash'"
 echo ""
+echo "then 'colcon build'"
+

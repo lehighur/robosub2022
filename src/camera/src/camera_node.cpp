@@ -66,7 +66,7 @@ class Camera {
     void post_process(Mat &input_image, vector<Mat> &outputs, const vector<string> &class_name) {
       vector<int> classIds;
       vector<float> confidences;
-      vector<Rect> boxes;
+      //vector<Rect> boxes;
       
       for (size_t i = 0; i < outputs.size(); ++i) {
         // Scan through all the bounding boxes output from the network and keep only the
@@ -90,7 +90,7 @@ class Camera {
               
               classIds.push_back(classIdPoint.x);
               confidences.push_back((float)confidence);
-              boxes.push_back(Rect(left, top, width, height));
+              //boxes.push_back(Rect(left, top, width, height));
               //lur::RString msg;
               // doesn't work
               // string x = sprintf("\nfound %d with confidence %.2f\ncenter coordinates: %d, %d\n\n", classIdPoint.x, confidence, centerX, centerY);
@@ -103,14 +103,14 @@ class Camera {
     
     // Perform non maximum suppression to eliminate redundant overlapping boxes with
     // lower confidences
-    vector<int> indices;
-    NMSBoxes(boxes, confidences, confThreshold, nmsThreshold, indices);
-    for (size_t i = 0; i < indices.size(); ++i) {
-        int idx = indices[i];
-        Rect box = boxes[idx];
-        //drawPred(classIds[idx], confidences[idx], box.x, box.y,
-        //         box.x + box.width, box.y + box.height, frame);
-    }
+    //vector<int> indices;
+    //NMSBoxes(boxes, confidences, confThreshold, nmsThreshold, indices);
+    //for (size_t i = 0; i < indices.size(); ++i) {
+    //    int idx = indices[i];
+    //    Rect box = boxes[idx];
+    //    //drawPred(classIds[idx], confidences[idx], box.x, box.y,
+    //    //         box.x + box.width, box.y + box.height, frame);
+    //}
     }
 
     vector<Mat> pre_process(Mat &frame, Net &net) {
@@ -169,7 +169,7 @@ class Camera {
       double freq = getTickFrequency() / 1000;
       double t = net.getPerfProfile(layersTimes) / freq;
       string label = format("Inference time for a frame : %.2f ms", t);
-        cout << label << "\n";
+      cout << label << "\n";
     }
 
     void record_to_file(string path, int frames=900) {
@@ -204,8 +204,8 @@ vector<string> load_class_list() {
 void load_net(Net &net) {
   net = readNet("/home/lur/model/yolo-obj_final.weights",
       "/home/lur/model/yolo-obj.cfg");
-  //net.setPreferableTarget(DNN_TARGET_CUDA);
-  //net.setPreferableBackend(DNN_BACKEND_CUDA);
+  net.setPreferableTarget(DNN_TARGET_CUDA);
+  net.setPreferableBackend(DNN_BACKEND_CUDA);
   //net.setPreferableBackend(DNN_BACKEND_OPENCV);
   //net.setPreferableTarget(DNN_TARGET_CPU);
 }
@@ -220,10 +220,11 @@ int main(int argc, char **argv) {
   Net net;
   load_net(net);
 
-  Camera front(0);
-  Camera bottom(4);
+  Camera front(1);
+  //Camera bottom(4);
 
-  front.detect_frames(900, net, class_list);
+  //front.detect_frames(900, net, class_list);
+  front.detect(net, class_list);
   //front.record_to_file("/home/lur/test.mp4");
 
   //for(int i = 0; i < 1; ++i)

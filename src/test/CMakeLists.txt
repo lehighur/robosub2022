@@ -10,18 +10,20 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(mavros_msgs REQUIRED)
+find_package(lur_pkg REQUIRED)
 
 add_executable(test_node src/test_node.cpp)
 target_include_directories(test_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
+  ${CMAKE_CURRENT_SOURCE_DIR}/../lur_pkg/include/lur_pkg)
 target_compile_features(test_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 ament_target_dependencies(
   test_node
-  "rclcpp"
-  "std_msgs"
-  "mavros_msgs"
+  rclcpp
+  std_msgs
+  mavros_msgs
+  lur_pkg
 )
 
 install(TARGETS test_node

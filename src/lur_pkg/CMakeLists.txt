@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(camera)
+project(lur_pkg)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -18,35 +18,18 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(builtin_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(mavros REQUIRED)
 find_package(mavros_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(lur_pkg REQUIRED)
-find_package( OpenCV REQUIRED )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
+find_package(rosidl_default_generators REQUIRED)
 
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-add_executable(camera_node src/camera_node.cpp)
-
-target_link_libraries( camera_node ${OpenCV_LIBS} )
-target_include_directories(camera_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-  ${CMAKE_CURRENT_SOURCE_DIR}/../lur_pkg/include/lur_pkg)
-ament_target_dependencies(
-  camera_node
-  rclcpp
-  std_msgs
-  mavros
-  mavros_msgs
-  sensor_msgs
-  lur_pkg
-)
-
-install(TARGETS camera_node
-  DESTINATION lib/${PROJECT_NAME})
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Cam.msg"
+  )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

@@ -16,12 +16,31 @@ using std::placeholders::_1;
 
 class Brain : public rclcpp::Node {
   public:
+    // back forward 
+    // -1000 1000
+    int x;
+    // left right
+    // -1000 1000
+    int y;
+    // up down
+    // 0 1000
+    int z;
+    // counter clock
+    // -1000 1000
+    int r;
+    int diff_x;
+    int diff_y;
+    int diff_z;
+    int diff_r;
+    lur::RManualControl msg;
+
     Brain() : Node("Brain"), q(), count(0) {
       printf("Brain constructor\n");
+      msg = lur::create_manual_msg(0, 0, 500, 0, 0);
       mc_pub = this->create_publisher<lur::RManualControl>("/mavros/manual_control/send", 10);
       //brain_pub = this->create_publisher<lur::RString>("/brain", 10);
       imu_sub = this->create_subscription<lur::RImu>("/mavros/imu/data", 10, std::bind(&Brain::imu_callback, this, _1));
-      cam_sub = this->create_subscription<lur::RImu>("/camera", 10, std::bind(&Brain::cam_callback, this, _1));
+      cam_sub = this->create_subscription<lur::Cam>("/camera", 10, std::bind(&Brain::cam_callback, this, _1));
       test_mc_sub = this->create_subscription<lur::RManualControl>("/lur/test/manual_control", 10, std::bind(&Brain::test_mc_callback, this, _1));
       //run_state_machine();
       timer = this->create_wall_timer(500ms, std::bind(&Brain::timer_callback, this));
@@ -51,8 +70,6 @@ class Brain : public rclcpp::Node {
 
     rclcpp::TimerBase::SharedPtr timer;
     std::size_t count;
-    // temporary
-    //queue<lur::RManualControl> q;
 
     // Publishers
     rclcpp::Publisher<lur::RString>::SharedPtr brain_pub;
@@ -61,7 +78,7 @@ class Brain : public rclcpp::Node {
     // Subscribers
     //rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub;
     rclcpp::Subscription<lur::RImu>::SharedPtr            imu_sub;
-    rclcpp::Subscription<lur::RString>::SharedPtr         cam_sub;
+    rclcpp::Subscription<lur::Cam>::SharedPtr         cam_sub;
     rclcpp::Subscription<lur::RManualControl>::SharedPtr  test_mc_sub;
 
     void imu_callback(const lur::RImu::SharedPtr msg) {
@@ -90,10 +107,30 @@ class Brain : public rclcpp::Node {
       //msg->linear_acceleration
     }
 
-    void cam_callback(const lur::RString::SharedPtr msg) {
-      // make custom ros msg type
-      // detections and locations
-      // edge detection
+    void cam_callback(const lur::Cam::SharedPtr msg) {
+      // lur::Cam message
+      //std_msgs/Header header
+      //uint32 class_id
+      //float64 confidence
+      //uint32 x
+      //uint32 y
+      // frame is 600x800
+      
+      // classes
+      // 0 gmain_bouys
+      // 1 bootlegger_bouys
+      // 2 gate
+      // 3 gman
+      // 4 bootlegger
+      // 5 path
+
+      int col = msg->x - 400;
+      int row = msg->y - 300;
+      diff_r = col;
+      diff_z = row;
+      cout << "cam callback\n";
+      cout << "diff_r: " << diff_r << "\n";
+      cout << "diff_z: " << diff_z << "\n";
     }
 
     void mag_callback(const lur::RMag::SharedPtr msg) {
@@ -137,14 +174,23 @@ class Brain : public rclcpp::Node {
     }
 
     void timer_callback() {
-      if (!q.empty()) {
-        //auto message = std_msgs::msg::String();
-        //message.data = "Message " + std::to_string(count_++);// + " (x,y,z,r,b): (" + msg.x + "," + msg.y + "," + msg.z + "," + msg.r + "," + msg.buttons + ")";
-        //RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
-        RCLCPP_INFO(this->get_logger(), "Publishing");
-        mc_pub->publish(*q.dequeue());
-      }
-      else printf("queue empty\n");
+      //if (!q.empty()) {
+      //  //auto message = std_msgs::msg::String();
+      //  //message.data = "Message " + std::to_string(count_++);// + " (x,y,z,r,b): (" + msg.x + "," + msg.y + "," + msg.z + "," + msg.r + "," + msg.buttons + ")";
+      //  //RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
+      //  RCLCPP_INFO(this->get_logger(), "Publishing");
+      //  mc_pub->publish(*q.dequeue());
+      //}
+      //else printf("queue empty\n");
+      
+      float scaling_factor = 0.5;
+      msg.r += diff_r * (2000 / 800) * scaling_factor;
+      msg.z += diff_z * (1000 / 600) * scaling_factor;
+      diff_r = 0;
+      diff_z = 0;
+      cout << msg.r << "\n";
+      cout << msg.z << "\n";
+      mc_pub->publish(msg);  
     }
 };
 

@@ -15,6 +15,7 @@
 #include "mavros_msgs/msg/state.hpp"
 #include "mavros_msgs/msg/manual_control.hpp"
 #include "mavros_msgs/srv/set_mode.hpp"
+#include "lur_pkg/msg/cam.hpp"
 
 // lur headers
 #include "ts_queue.h"
@@ -24,7 +25,7 @@
 namespace lur {
 
   inline constexpr double pi { 3.14159 };
-  // ROS2 message types
+  // ros2 message types
   typedef std_msgs::msg::Header            RHeader;
   typedef std_msgs::msg::String            RString;
   typedef mavros_msgs::srv::SetMode        RSetMode;
@@ -34,6 +35,11 @@ namespace lur {
   typedef sensor_msgs::msg::Imu            RImu; 
   typedef sensor_msgs::msg::MagneticField  RMag; 
   typedef sensor_msgs::msg::Temperature    RTemperature; 
+
+  // Custom ros2 messages
+  // not a great name
+  // also maybe change package name so not conflicting
+  typedef lur_pkg::msg::Cam    Cam; 
 
   // @@ use custom messages and services?
   inline RManualControl create_manual_msg(int x, int y, int z, int r, int buttons) {
