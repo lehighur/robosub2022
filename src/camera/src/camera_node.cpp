@@ -17,12 +17,12 @@ using namespace cv;
 using namespace cv::dnn;
 using std::placeholders::_1;
 
-class Model {
+class ModelObject {
   public:
-    Net &net;
-    vector<string> &class_list;
+    Net net;
+    vector<string> class_list;
 
-    Model() {
+    ModelObject() {
       // Load class list
       ifstream ifs("/home/lur/model/obj.names");
       string line;
@@ -39,12 +39,14 @@ class Model {
     }
 };
 
-class Camera {
+class Camera : public rclcpp::Node {
   public:
+    ModelObject *model;
     rclcpp::Publisher<lur::Cam>::SharedPtr camera_pub;
     rclcpp::Subscription<lur::RString>::SharedPtr brain_sub;
 
-    Camera(int id) : Node("Camera") {
+    Camera(int id, ModelObject &m) : Node("Camera") {
+      model = m;
       camera_pub = this->create_publisher<lur::Cam>("/camera", 10);
       brain_sub = this->create_subscription<lur::RString>("/brain", 10, std::bind(&Camera::brain_sub_callback, this, _1));
       VideoCapture c;
@@ -195,24 +197,21 @@ int main(int argc, char **argv) {
   (void) argc;
   (void) argv;
   printf("hello world camera package\n");
-  Model model;
+
+  ModelObject model;
 
   rclcpp::init(argc, argv);
   rclcpp::executors::MultiThreadedExecutor executor;
 
-  vector<string> class_list = load_class_list();
-  Net net;
-  load_net(net);
-
-  auto front = std::make_shared<Camera(0, &net, &classlist)>;
-  //auto bottom = std::make_shared<Camera(0)>;
+  auto front = std::make_shared<Camera(0, &model)>;
+  //auto bottom = std::make_shared<Camera(0, &model)>;
 
   //front.detect_frames(900, net, class_list);
-  front.detect(net, class_list);
+  //front.detect(net, class_list);
   //front.record_to_file("/home/lur/test.mp4");
 
   executor.add_node(front);
-  executor.add_node(bottom);
+  //executor.add_node(bottom);
   executor.spin();
 
   return 0;
