@@ -25,7 +25,7 @@ class Brain : public rclcpp::Node {
     // up down
     // 0 1000
     int z;
-    // counter clock
+    // clock counter
     // -1000 1000
     int r;
     int diff_x;
@@ -184,7 +184,7 @@ class Brain : public rclcpp::Node {
       //else printf("queue empty\n");
       
       float scaling_factor = 0.5;
-      msg.r += diff_r * (2000 / 800) * scaling_factor;
+      msg.r -= diff_r * (2000 / 800) * scaling_factor;
       msg.z += diff_z * (1000 / 600) * scaling_factor;
       diff_r = 0;
       diff_z = 0;
