@@ -17,12 +17,24 @@ using namespace cv;
 using namespace cv::dnn;
 using std::placeholders::_1;
 
-class ModelObject {
+class Camera : public rclcpp::Node {
   public:
     Net net;
     vector<string> class_list;
+    bool front_detected;
+    bool bottom_detected;
+    bool front_capturing;
+    bool bottom_capturing;
+    rclcpp::Publisher<lur::Cam>::SharedPtr camera_pub;
+    rclcpp::Subscription<lur::RString>::SharedPtr brain_sub;
 
-    ModelObject() {
+    Camera(int front_id, int bottom_id) : 
+      Node("Camera"),
+      front_detected(false),
+      bottom_detected(false),
+      front_capturing(false),
+      bottom_capturing(false) {
+
       // Load class list
       ifstream ifs("/home/lur/model/obj.names");
       string line;
@@ -36,29 +48,27 @@ class ModelObject {
       net.setPreferableBackend(DNN_BACKEND_CUDA);
       //net.setPreferableBackend(DNN_BACKEND_OPENCV);
       //net.setPreferableTarget(DNN_TARGET_CPU);
-    }
-};
-
-class Camera : public rclcpp::Node {
-  public:
-    ModelObject *model;
-    rclcpp::Publisher<lur::Cam>::SharedPtr camera_pub;
-    rclcpp::Subscription<lur::RString>::SharedPtr brain_sub;
-
-    Camera(int id, ModelObject &m) : Node("Camera") {
-      model = m;
       camera_pub = this->create_publisher<lur::Cam>("/camera", 10);
-      brain_sub = this->create_subscription<lur::RString>("/brain", 10, std::bind(&Camera::brain_sub_callback, this, _1));
-      VideoCapture c;
-      Mat f;
-      if (!c.open(id)) {
-        printf("ERROR: Unable to open camera with id: %d\n", id);
+      //brain_sub = this->create_subscription<lur::RString>("/brain", 10, std::bind(&Camera::brain_sub_callback, this, _1));
+      VideoCapture fc;
+      VideoCapture bc;
+      Mat ff;
+      Mat bf;
+      if (!fc.open(front_id)) {
+        printf("ERROR: Unable to open front camera with id: %d\n", id);
       }
-      capture = c;
-      frame = f;
+      if (!bc.open(bottom_id)) {
+        printf("ERROR: Unable to open bottom camera with id: %d\n", id);
+      }
+      front_capture = fc;
+      bottom_capture = bc;
+      front_frame = ff;
+      bottom_frame = bf;
       timer = this->create_wall_timer(500ms, std::bind(&Camera::timer_callback, this));
     }
 
+    // move
+    //
   // Initialize the parameters
   float confThreshold = 0.5; // Confidence threshold
   float nmsThreshold = 0.4;  // Non-maximum suppression threshold
@@ -85,10 +95,11 @@ class Camera : public rclcpp::Node {
           // Get the value and location of the maximum score
           minMaxLoc(scores, 0, &confidence, 0, &classIdPoint);
           if (confidence > confThreshold) {
-            int centerX = (int)(data[0] * frame.cols);
-            int centerY = (int)(data[1] * frame.rows);
-            int width = (int)(data[2] * frame.cols);
-            int height = (int)(data[3] * frame.rows);
+            // change front_frame.cols
+            int centerX = (int)(data[0] * front_frame.cols);
+            int centerY = (int)(data[1] * front_frame.rows);
+            int width = (int)(data[2] * front_frame.cols);
+            int height = (int)(data[3] * front_frame.rows);
             int left = centerX - width / 2;
             int top = centerY - height / 2;
             
@@ -103,6 +114,7 @@ class Camera : public rclcpp::Node {
       // lower confidences
       vector<int> indices;
       NMSBoxes(boxes, confidences, confThreshold, nmsThreshold, indices);
+      this->detected = true;
       for (size_t i = 0; i < indices.size(); ++i) {
           lur::Cam msg;
           msg.x = boxes[indices[i]].x + (boxes[indices[i]].width / 2);
@@ -126,92 +138,108 @@ class Camera : public rclcpp::Node {
       return outputs;
     }
 
-    int detect_frames(int frames, Net &net, vector<string> &class_list) {
-      // use frame queue
-      for (int i = 0; i < frames; ++i) {
-        this->capture >> this->frame;
-        if (this->frame.empty()) break; // maybe be safer here
+    void detect_front() {
+      this->front_capturing = true;
+      while (!this->front_detected) {
+        this->front_capture >> this->front_frame;
+        if (this->front_frame.empty()) break; // maybe be safer here
         vector<Mat> detections;     // Process the image.
-        detections = pre_process(this->frame, net);
-        post_process(this->frame, detections, class_list);
+        detections = pre_process(this->front_frame, this->net);
+        post_process(this->front_frame, detections, this->class_list);
         vector<double> layersTimes;
         double freq = getTickFrequency() / 1000;
         double t = net.getPerfProfile(layersTimes) / freq;
-        string label = format("Inference time for a frame : %.2f ms", t);
+        string label = format("Inference time for a front frame : %.2f ms", t);
         cout << label << "\n";
       }
-      return 0;
+      this->front_capturing = false;
     }
 
-    void detect(Net &net, vector<string> &class_list) {
-      while (1) {
-        this->capture >> this->frame;
-        if (this->frame.empty()) break; // maybe be safer here
+    void detect_bottom() {
+      this->bottom_capturing = true;
+      while (!this->bottom_detected) {
+        this->bottom_capture >> this->bottom_frame;
+        if (this->bottom_frame.empty()) break; // maybe be safer here
         vector<Mat> detections;     // Process the image.
-        detections = pre_process(this->frame, net);
-        post_process(this->frame, detections, class_list);
+        detections = pre_process(this->bottom_frame, this->net);
+        post_process(this->bottom_frame, detections, this->class_list);
         vector<double> layersTimes;
         double freq = getTickFrequency() / 1000;
         double t = net.getPerfProfile(layersTimes) / freq;
-        string label = format("Inference time for a frame : %.2f ms", t);
+        string label = format("Inference time for a bottom frame : %.2f ms", t);
         cout << label << "\n";
       }
+      this->bottom_capturing = false;
     }
 
-    void detect_one(Mat &frame, Net &net, vector<string> class_list) {
-      this->capture >> this->frame;
-      if (this->frame.empty()) return; // maybe be safer here
-      vector<Mat> detections;     // Process the image.
-      detections = pre_process(this->frame, net);
-      post_process(this->frame, detections, class_list);
-      // Put efficiency information. The function getPerfProfile returns the overall time for inference(t) and the timings for each of the layers(in layersTimes)
-      vector<double> layersTimes;
-      double freq = getTickFrequency() / 1000;
-      double t = net.getPerfProfile(layersTimes) / freq;
-      string label = format("Inference time for a frame : %.2f ms", t);
-      cout << label << "\n";
-    }
-
-    void record_to_file(string path, int frames=900) {
+    void front_record_to_file(string path, int frames=900) {
       // Default resolutions of the frame are obtained.The default resolutions are system dependent.
-      int frame_width = this->capture.get(cv::CAP_PROP_FRAME_WIDTH);
-      int frame_height = this->capture.get(cv::CAP_PROP_FRAME_HEIGHT);
+      int frame_width = this->front_capture.get(cv::CAP_PROP_FRAME_WIDTH);
+      int frame_height = this->front_capture.get(cv::CAP_PROP_FRAME_HEIGHT);
       VideoWriter writer(path, cv::VideoWriter::fourcc('M','J','P','G'), 30, Size(frame_width, frame_height));
       for (int i = 0; i < frames; ++i) {
-        this->capture >> this->frame;
-        if (this->frame.empty()) break; // maybe be safer here
-        writer.write(frame); 
+        this->front_capture >> this->front_frame;
+        if (this->front_frame.empty()) break; // maybe be safer here
+        writer.write(front_frame); 
       }
     }
+
+    void bottom_record_to_file(string path, int frames=900) {
+      // Default resolutions of the frame are obtained.The default resolutions are system dependent.
+      int frame_width = this->bottom_capture.get(cv::CAP_PROP_FRAME_WIDTH);
+      int frame_height = this->bottom_capture.get(cv::CAP_PROP_FRAME_HEIGHT);
+      VideoWriter writer(path, cv::VideoWriter::fourcc('M','J','P','G'), 30, Size(frame_width, frame_height));
+      for (int i = 0; i < frames; ++i) {
+        this->bottom_capture >> this->bottom_frame;
+        if (this->bottom_frame.empty()) break; // maybe be safer here
+        writer.write(bottom_frame); 
+      }
+    }
+
   private:
+    rclcpp::TimerBase::SharedPtr timer;
+
     void timer_callback() {
       printf("timer_callback\n");
+      if (!this->front_capturing) {
+        if (!this->front_detected) detect_front();
+      }
+      if (!this->bottom_capturing) {
+        if (!this->bottom_detected) detect_bottom();
+      }
     }
-    VideoCapture capture;
-    Mat frame;
-    int width;
-    int height;
+
+    void brain_sub_callback() {
+      printf("brain_sub_callback\n");
+    }
+
+    VideoCapture front_capture;
+    VideoCapture bottom_capture;
+    Mat front_frame;
+    Mat bottom_frame;
+    int front_width;
+    int front_height;
+    int bottom_width;
+    int bottom_height;
 };
+
 int main(int argc, char **argv) {
   // hides unused parameter warnings from compiler 
   (void) argc;
   (void) argv;
   printf("hello world camera package\n");
 
-  ModelObject model;
-
   rclcpp::init(argc, argv);
   rclcpp::executors::MultiThreadedExecutor executor;
 
-  auto front = std::make_shared<Camera(0, &model)>;
-  //auto bottom = std::make_shared<Camera(0, &model)>;
+  auto camera = std::make_shared<Camera>;
+  //auto bottom = std::make_shared<Camera(0, model)>;
 
   //front.detect_frames(900, net, class_list);
   //front.detect(net, class_list);
   //front.record_to_file("/home/lur/test.mp4");
 
-  executor.add_node(front);
-  //executor.add_node(bottom);
+  executor.add_node(camera);
   executor.spin();
 
   return 0;
