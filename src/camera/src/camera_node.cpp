@@ -28,12 +28,19 @@ class Camera : public rclcpp::Node {
     rclcpp::Publisher<lur::Cam>::SharedPtr camera_pub;
     rclcpp::Subscription<lur::RString>::SharedPtr brain_sub;
 
-    Camera(int front_id, int bottom_id) : 
+    Camera() : 
       Node("Camera"),
       front_detected(false),
       bottom_detected(false),
       front_capturing(false),
       bottom_capturing(false) {
+
+      this->declare_parameter("front_camera");
+      this->declare_parameter("bottom_camera");
+      rclcpp::Parameter front_camera = this->get_parameter("front_camera");
+      rclcpp::Parameter bottom_camera = this->get_parameter("bottom_camera");
+      int front_camera_id = front_camera.as_int();
+      int bottom_camera_id = bottom_camera.as_int();
 
       // Load class list
       ifstream ifs("/home/lur/model/obj.names");
@@ -54,11 +61,11 @@ class Camera : public rclcpp::Node {
       VideoCapture bc;
       Mat ff;
       Mat bf;
-      if (!fc.open(front_id)) {
-        printf("ERROR: Unable to open front camera with id: %d\n", front_id);
+      if (!fc.open(front_camera_id)) {
+        printf("ERROR: Unable to open front camera with id: %d\n", front_camera_id);
       }
-      if (!bc.open(bottom_id)) {
-        printf("ERROR: Unable to open bottom camera with id: %d\n", bottom_id);
+      if (!bc.open(bottom_camera_id)) {
+        printf("ERROR: Unable to open bottom camera with id: %d\n", bottom_camera_id);
       }
       front_capture = fc;
       bottom_capture = bc;
@@ -95,11 +102,11 @@ class Camera : public rclcpp::Node {
           // Get the value and location of the maximum score
           minMaxLoc(scores, 0, &confidence, 0, &classIdPoint);
           if (confidence > confThreshold) {
-            // change front_frame.cols
-            int centerX = (int)(data[0] * front_frame.cols);
-            int centerY = (int)(data[1] * front_frame.rows);
-            int width = (int)(data[2] * front_frame.cols);
-            int height = (int)(data[3] * front_frame.rows);
+            // MAKE SURE THESE ARE 640x800
+            int centerX = (int)(data[0] * 800);
+            int centerY = (int)(data[1] * 640);
+            int width = (int)(data[2] * 800);
+            int height = (int)(data[3] * 640);
             int left = centerX - width / 2;
             int top = centerY - height / 2;
             
@@ -117,12 +124,13 @@ class Camera : public rclcpp::Node {
       if (front) this->front_detected = true;
       if (!front) this->bottom_detected = true;
       for (size_t i = 0; i < indices.size(); ++i) {
-          lur::Cam msg;
-          msg.x = boxes[indices[i]].x + (boxes[indices[i]].width / 2);
-          msg.y = boxes[indices[i]].y + (boxes[indices[i]].height / 2);
-          msg.class_id = classIds[indices[i]];
-          msg.confidence = confidences[indices[i]];
-          this->camera_pub->publish(msg);
+        lur::Cam msg;
+        msg.x = boxes[indices[i]].x + (boxes[indices[i]].width / 2);
+        msg.y = boxes[indices[i]].y + (boxes[indices[i]].height / 2);
+        RCLCPP_INFO(this->get_logger(), "x: %d, y: %d\n", msg.x, msg.y);
+        msg.class_id = classIds[indices[i]];
+        msg.confidence = confidences[indices[i]];
+        this->camera_pub->publish(msg);
       }
     }
 
@@ -236,7 +244,9 @@ int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   rclcpp::executors::MultiThreadedExecutor executor;
 
-  auto camera_node = std::make_shared<Camera>(0, 4);
+  // uses a bunch of memory, could be redesigned
+
+  auto camera_node = std::make_shared<Camera>();
   //auto bottom = std::make_shared<Camera(0, model)>;
 
   //front.detect_frames(900, net, class_list);

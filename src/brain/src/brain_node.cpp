@@ -34,8 +34,14 @@ class Brain : public rclcpp::Node {
     int diff_r;
     lur::RManualControl msg;
 
+    int timeout;
+
     Brain() : Node("Brain"), q(), count(0) {
       printf("Brain constructor\n");
+      this->declare_parameter("timeout");
+      rclcpp::Parameter p = this->get_parameter("timeout");
+      this->timeout = p.as_int();
+
       msg = lur::create_manual_msg(0, 0, 500, 0, 0);
       mc_pub = this->create_publisher<lur::RManualControl>("/mavros/manual_control/send", 10);
       //brain_pub = this->create_publisher<lur::RString>("/brain", 10);
@@ -183,6 +189,8 @@ class Brain : public rclcpp::Node {
       //}
       //else printf("queue empty\n");
       
+      ++this->count;
+      if (this->count > this->timeout * 2) exit(1);
       float scaling_factor = 0.5;
       msg.r -= diff_r * (2000 / 800) * scaling_factor;
       msg.z += diff_z * (1000 / 600) * scaling_factor;
