@@ -55,10 +55,10 @@ class Camera : public rclcpp::Node {
       Mat ff;
       Mat bf;
       if (!fc.open(front_id)) {
-        printf("ERROR: Unable to open front camera with id: %d\n", id);
+        printf("ERROR: Unable to open front camera with id: %d\n", front_id);
       }
       if (!bc.open(bottom_id)) {
-        printf("ERROR: Unable to open bottom camera with id: %d\n", id);
+        printf("ERROR: Unable to open bottom camera with id: %d\n", bottom_id);
       }
       front_capture = fc;
       bottom_capture = bc;
@@ -78,7 +78,7 @@ class Camera : public rclcpp::Node {
     const float INPUT_WIDTH = 640.0;
     const float INPUT_HEIGHT = 640.0;
 
-    void post_process(Mat &input_image, vector<Mat> &outputs, const vector<string> &class_name) {
+    void post_process(Mat &input_image, vector<Mat> &outputs, const vector<string> &class_name, bool front) {
       vector<int> classIds;
       vector<float> confidences;
       vector<Rect> boxes;
@@ -114,7 +114,8 @@ class Camera : public rclcpp::Node {
       // lower confidences
       vector<int> indices;
       NMSBoxes(boxes, confidences, confThreshold, nmsThreshold, indices);
-      this->detected = true;
+      if (front) this->front_detected = true;
+      if (!front) this->bottom_detected = true;
       for (size_t i = 0; i < indices.size(); ++i) {
           lur::Cam msg;
           msg.x = boxes[indices[i]].x + (boxes[indices[i]].width / 2);
@@ -125,15 +126,16 @@ class Camera : public rclcpp::Node {
       }
     }
 
-    vector<Mat> pre_process(Mat &frame, Net &net) {
+    vector<Mat> pre_process(Mat &frame) {
       Mat blob;
       blobFromImage(frame, blob, 1./255., Size(INPUT_WIDTH, INPUT_HEIGHT), Scalar(), true, false);
 
-      net.setInput(blob);
+      // do we need to worry about locking this?
+      this->net.setInput(blob);
 
       // Forward propagate.
       vector<Mat> outputs;
-      net.forward(outputs, net.getUnconnectedOutLayersNames());
+      this->net.forward(outputs, this->net.getUnconnectedOutLayersNames());
 
       return outputs;
     }
@@ -144,8 +146,8 @@ class Camera : public rclcpp::Node {
         this->front_capture >> this->front_frame;
         if (this->front_frame.empty()) break; // maybe be safer here
         vector<Mat> detections;     // Process the image.
-        detections = pre_process(this->front_frame, this->net);
-        post_process(this->front_frame, detections, this->class_list);
+        detections = pre_process(this->front_frame);
+        post_process(this->front_frame, detections, this->class_list, true);
         vector<double> layersTimes;
         double freq = getTickFrequency() / 1000;
         double t = net.getPerfProfile(layersTimes) / freq;
@@ -161,8 +163,8 @@ class Camera : public rclcpp::Node {
         this->bottom_capture >> this->bottom_frame;
         if (this->bottom_frame.empty()) break; // maybe be safer here
         vector<Mat> detections;     // Process the image.
-        detections = pre_process(this->bottom_frame, this->net);
-        post_process(this->bottom_frame, detections, this->class_list);
+        detections = pre_process(this->bottom_frame);
+        post_process(this->bottom_frame, detections, this->class_list, false);
         vector<double> layersTimes;
         double freq = getTickFrequency() / 1000;
         double t = net.getPerfProfile(layersTimes) / freq;
@@ -204,9 +206,11 @@ class Camera : public rclcpp::Node {
       if (!this->front_capturing) {
         if (!this->front_detected) detect_front();
       }
+      this->front_detected = false;
       if (!this->bottom_capturing) {
         if (!this->bottom_detected) detect_bottom();
       }
+      this->bottom_detected = false;
     }
 
     void brain_sub_callback() {
@@ -232,14 +236,14 @@ int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   rclcpp::executors::MultiThreadedExecutor executor;
 
-  auto camera = std::make_shared<Camera>;
+  auto camera_node = std::make_shared<Camera>(0, 4);
   //auto bottom = std::make_shared<Camera(0, model)>;
 
   //front.detect_frames(900, net, class_list);
   //front.detect(net, class_list);
   //front.record_to_file("/home/lur/test.mp4");
 
-  executor.add_node(camera);
+  executor.add_node(camera_node);
   executor.spin();
 
   return 0;
