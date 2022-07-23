@@ -1,0 +1,8 @@
+launch:
+- node:
+    pkg: "brain"
+    exec: "brain_node"
+    param:
+    -
+      name: "timeout"
+      value: 1200

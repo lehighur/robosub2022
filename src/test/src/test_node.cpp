@@ -47,13 +47,14 @@ class Test : public rclcpp::Node {
       request->custom_mode = mode;
       //request->a = atoll(argv[1]);
       //request->b = atoll(argv[2]);
-      while (!client->wait_for_service(1s)) {
+      while (!client->wait_for_service(2s)) {
         if (!rclcpp::ok()) {
           printf("Interrupted while waiting for the service. Exiting.");
           return false;
         }
         // might want to break here instead
-        printf("service not available, waiting again...");
+        printf("service not available");
+        break;
       }
 
       auto result = client->async_send_request(request);
@@ -83,7 +84,6 @@ class Test : public rclcpp::Node {
     }
 
     void read_man_test_file(string path) {
-      //ifstream man_file("/home/lur/man_test.txt");
       ifstream man_file(path);
       if (man_file.is_open()) {
         string line;
@@ -130,10 +130,10 @@ int main(int argc, char ** argv)
       //uint8 MAV_MODE_MANUAL_ARMED = 192
       //uint8 MAV_MODE_GUIDED_DISARMED = 88
       //uint8 MAV_MODE_GUIDED_ARMED = 216
-  //bool set_check = test_node->set_mode("MAV_MODE_STABILIZE_ARMED");
+  bool set_check = test_node->set_mode("MAV_MODE_STABILIZE_ARMED");
   //test_node->set_mode("MAV_MODE_MANUAL_ARMED");
   //test_node->set_mode("MAV_MODE_GUIDED_ARMED");
-  test_node->run_man_test("/robosub/src/test/src/man_test.txt");
+  test_node->run_man_test("/home/lur/robosub22/src/test/src/man_test.txt");
   rclcpp::spin(test_node);
   rclcpp::shutdown();
   return 0;

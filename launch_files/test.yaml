@@ -1,0 +1,32 @@
+launch:
+
+# args that can be set from the command line or a default will be used
+- arg:
+    name: "background_r"
+    default: "0"
+- arg:
+    name: "background_g"
+    default: "255"
+- arg:
+    name: "background_b"
+    default: "0"
+- arg:
+    name: "chatter_ns"
+    default: "my/chatter/ns"
+
+- node:
+    pkg: "brain"
+    exec: "brain_node"
+    param:
+    -
+      name: "timeout"
+      value: 60
+
+- node:
+    pkg: "test"
+    exec: "test_node"
+# pass file path here
+    param:
+    -
+      name: "timeout"
+      value: 15

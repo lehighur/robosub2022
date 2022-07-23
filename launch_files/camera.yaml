@@ -1,0 +1,11 @@
+launch:
+- node:
+    pkg: "camera"
+    exec: "camera_node"
+    param:
+    -
+        name: "front_camera"
+        value: 0
+    -
+        name: "bottom_camera"
+        value: 1

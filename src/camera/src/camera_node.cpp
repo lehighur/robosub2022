@@ -156,11 +156,8 @@ class Camera : public rclcpp::Node {
         vector<Mat> detections;     // Process the image.
         detections = pre_process(this->front_frame);
         post_process(this->front_frame, detections, this->class_list, true);
-        vector<double> layersTimes;
-        double freq = getTickFrequency() / 1000;
-        double t = net.getPerfProfile(layersTimes) / freq;
-        string label = format("Inference time for a front frame : %.2f ms", t);
-        cout << label << "\n";
+        // print time for a frame
+        //perf();
       }
       this->front_capturing = false;
     }
@@ -173,11 +170,8 @@ class Camera : public rclcpp::Node {
         vector<Mat> detections;     // Process the image.
         detections = pre_process(this->bottom_frame);
         post_process(this->bottom_frame, detections, this->class_list, false);
-        vector<double> layersTimes;
-        double freq = getTickFrequency() / 1000;
-        double t = net.getPerfProfile(layersTimes) / freq;
-        string label = format("Inference time for a bottom frame : %.2f ms", t);
-        cout << label << "\n";
+        // print time for a frame
+        //perf();
       }
       this->bottom_capturing = false;
     }

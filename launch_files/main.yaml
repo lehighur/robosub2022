@@ -1,5 +1,3 @@
-# example.launch.yaml
-
 launch:
 
 # args that can be set from the command line or a default will be used
@@ -16,36 +14,14 @@ launch:
     name: "chatter_ns"
     default: "my/chatter/ns"
 
-# start a turtlesim_node in the turtlesim1 namespace
-- node:
-    pkg: "mavros"
-    exec: "mavros_node"
-    param:
-    -
-        name: "fcu_url"
-        value: "/dev/ttyACM1:115200"
-    -
-        name: "gcs_url"
-        value: "tcp-l://:11520"
-    -
-        name: "tgt_system"
-        value: 1
-    -
-        name: "tgt_component"
-        value : 1
-    -
-        name: "system_id"
-        value: 1
-    -
-        name: "component_id"
-        value: 240
 - node:
     pkg: "brain"
     exec: "brain_node"
     param:
     -
       name: "timeout"
-      value: 15
+      value: 900
+
 - node:
     pkg: "camera"
     exec: "camera_node"

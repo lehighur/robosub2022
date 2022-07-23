@@ -16,28 +16,7 @@ using std::placeholders::_1;
 
 class Brain : public rclcpp::Node {
   public:
-    // back forward 
-    // -1000 1000
-    int x;
-    // left right
-    // -1000 1000
-    int y;
-    // up down
-    // 0 1000
-    int z;
-    // clock counter
-    // -1000 1000
-    int r;
-    int diff_x;
-    int diff_y;
-    int diff_z;
-    int diff_r;
-    lur::RManualControl msg;
-
-    int timeout;
-
     Brain() : Node("Brain"), q(), count(0) {
-      printf("Brain constructor\n");
       this->declare_parameter("timeout");
       rclcpp::Parameter p = this->get_parameter("timeout");
       this->timeout = p.as_int();
@@ -70,6 +49,26 @@ class Brain : public rclcpp::Node {
   private:
     // need state stuff
     // like position and what not
+    // back forward 
+    // -1000 1000
+    int x;
+    // left right
+    // -1000 1000
+    int y;
+    // up down
+    // 0 1000
+    int z;
+    // clock counter
+    // -1000 1000
+    int r;
+    int diff_x;
+    int diff_y;
+    int diff_z;
+    int diff_r;
+    lur::RManualControl msg;
+
+    int timeout;
+
 
     TSQueue<lur::RManualControl::SharedPtr> q;
     StateMachine sm;
@@ -134,9 +133,7 @@ class Brain : public rclcpp::Node {
       int row = msg->y - 300;
       diff_r = col;
       diff_z = row;
-      cout << "cam callback\n";
-      cout << "diff_r: " << diff_r << "\n";
-      cout << "diff_z: " << diff_z << "\n";
+      //diff_x = 1;
     }
 
     void mag_callback(const lur::RMag::SharedPtr msg) {
@@ -180,6 +177,11 @@ class Brain : public rclcpp::Node {
     }
 
     void timer_callback() {
+      ++this->count;
+      // use message headers?
+      if (this->count > this->timeout * 2) exit(1);
+
+      // for test node
       //if (!q.empty()) {
       //  //auto message = std_msgs::msg::String();
       //  //message.data = "Message " + std::to_string(count_++);// + " (x,y,z,r,b): (" + msg.x + "," + msg.y + "," + msg.z + "," + msg.r + "," + msg.buttons + ")";
@@ -189,27 +191,25 @@ class Brain : public rclcpp::Node {
       //}
       //else printf("queue empty\n");
       
-      ++this->count;
-      if (this->count > this->timeout * 2) exit(1);
       float scaling_factor = 0.5;
-      msg.r -= diff_r * (2000 / 800) * scaling_factor;
-      msg.z += diff_z * (1000 / 600) * scaling_factor;
-      diff_r = 0;
-      diff_z = 0;
-      cout << msg.r << "\n";
-      cout << msg.z << "\n";
+      msg.r += diff_r * (2000 / 800) * scaling_factor;
+      //msg.z += diff_z * (1000 / 600) * scaling_factor;
+      msg.x = 500;
       mc_pub->publish(msg);  
+      msg.r += diff_r * (2000 / 800) * scaling_factor;
+      //msg.z += diff_z * (1000 / 600) * scaling_factor;
+      msg.x = 0;
+      diff_r = 0;
+      //diff_z = 0;
     }
 };
 
-int main(int argc, char ** argv) {
-  printf("hello world brain package\n");
+int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   rclcpp::executors::MultiThreadedExecutor executor;
   auto brain_node = std::make_shared<Brain>();
   executor.add_node(brain_node);
   executor.spin();
-
   rclcpp::shutdown();
   return 0;
 }
