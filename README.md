@@ -44,3 +44,19 @@ sudo chmod 666 /dev/ttyACM0
 sudo chmod 666 /dev/ttyACM1
 sudo gpasswd -a $USER dialout
 ```
+
+### checklist
+- camera (and imu?) locking using udev rules
+- systemd startup script, can we start something or is it when it turns on it goes?
+- qualification task, go forward, try to adjust and find distance of objects
+- distance to bottom of pool using bottom camera? or just try to hold depth
+- how to handle finishing task, timeout? time since last detection?
+- change mode and arm from node
+- add more parameters to launch files
+- get imu data and use orientation
+- better dev flow
+- tests
+- docs
+- simulation?
+- docker
+- why does it get disarmed after stopping publishing? publishing all 0s?
