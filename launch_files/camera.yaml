@@ -9,3 +9,6 @@ launch:
     -
         name: "bottom_camera"
         value: 1
+    -
+        name: "timeout"
+        value: 900

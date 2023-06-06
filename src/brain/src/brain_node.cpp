@@ -4,6 +4,7 @@
 #include <fstream>
 #include <chrono>
 #include <thread>
+#include <unordered_map>
 
 // how do I handle double dependencies or
 // does the compiler handle that?
@@ -16,16 +17,18 @@ using std::placeholders::_1;
 
 class Brain : public rclcpp::Node {
   public:
-    Brain() : Node("Brain"), q(), count(0) {
+    Brain() : Node("Brain"), q(), count(0), detections(), index(0), det_check(false), det_count(0) {
+      RCLCPP_INFO(this->get_logger(), "constructors");
       this->declare_parameter("timeout");
       rclcpp::Parameter p = this->get_parameter("timeout");
       this->timeout = p.as_int();
 
       msg = lur::create_manual_msg(0, 0, 500, 0, 0);
       mc_pub = this->create_publisher<lur::RManualControl>("/mavros/manual_control/send", 10);
+      // create custom message type
       //brain_pub = this->create_publisher<lur::RString>("/brain", 10);
       imu_sub = this->create_subscription<lur::RImu>("/mavros/imu/data", 10, std::bind(&Brain::imu_callback, this, _1));
-      cam_sub = this->create_subscription<lur::Cam>("/camera", 10, std::bind(&Brain::cam_callback, this, _1));
+      cam_sub = this->create_subscription<lur::Cam>("/lur/camera", 10, std::bind(&Brain::cam_callback, this, _1));
       test_mc_sub = this->create_subscription<lur::RManualControl>("/lur/test/manual_control", 10, std::bind(&Brain::test_mc_callback, this, _1));
       //run_state_machine();
       timer = this->create_wall_timer(500ms, std::bind(&Brain::timer_callback, this));
@@ -47,6 +50,8 @@ class Brain : public rclcpp::Node {
     }
 
   private:
+    bool det_check;
+    int det_count;
     // need state stuff
     // like position and what not
     // back forward 
@@ -58,7 +63,7 @@ class Brain : public rclcpp::Node {
     // up down
     // 0 1000
     int z;
-    // clock counter
+    // counter clock
     // -1000 1000
     int r;
     int diff_x;
@@ -66,6 +71,8 @@ class Brain : public rclcpp::Node {
     int diff_z;
     int diff_r;
     lur::RManualControl msg;
+    unordered_map<int, lur::Cam::SharedPtr> detections;
+    int index;
 
     int timeout;
 
@@ -95,7 +102,17 @@ class Brain : public rclcpp::Node {
       // float64 z 0
       // float64 w 1
       //msg->orientation
-
+      //
+      //
+      //RCLCPP_INFO(this->get_logger(), "IMU");
+      //float x = msg->orientation.x;
+      //float y = msg->orientation.y;
+      //float z = msg->orientation.z;
+      //float w = msg->orientation.w;
+      //RCLCPP_INFO(this->get_logger(), "Orientation (x,y,z,w): %.4f, %.4f, %.4f, %.4f \n", x, y, z, w);
+      //
+      //
+      //
       // geometry_msgs/Vector3
       // x y z
       // # This represents a vector in free space.
@@ -113,12 +130,17 @@ class Brain : public rclcpp::Node {
     }
 
     void cam_callback(const lur::Cam::SharedPtr msg) {
+      //if (index == 10) index = 0;
+      //else ++index;
+      //detections[index] = msg;
       // lur::Cam message
       //std_msgs/Header header
       //uint32 class_id
       //float64 confidence
       //uint32 x
       //uint32 y
+      //uint32 width
+      //uint32 height
       // frame is 600x800
       
       // classes
@@ -128,12 +150,21 @@ class Brain : public rclcpp::Node {
       // 3 gman
       // 4 bootlegger
       // 5 path
-
-      int col = msg->x - 400;
-      int row = msg->y - 300;
-      diff_r = col;
-      diff_z = row;
-      //diff_x = 1;
+      if (msg->class_id == 0 || msg->class_id == 1) {
+        this->det_check = true;
+        diff_y = msg->x - 400;
+        diff_z = msg->y - 300;
+      }
+      //exit(1);
+      //if (msg->class_id == 3) {
+      //  if (msg->x < 300 || msg->x > 500) {
+      //    diff_r = msg->x - 400;
+      //  }
+      //  if (msg->y > 300) {
+      //    diff_z = msg->y - 300;
+      //  }
+      //}
+      //RCLCPP_INFO(this->get_logger(), "cam_callback");
     }
 
     void mag_callback(const lur::RMag::SharedPtr msg) {
@@ -176,31 +207,110 @@ class Brain : public rclcpp::Node {
       q.enqueue(msg);
     }
 
+    // move
+    float r_scaling_factor = .50;
+    float z_scaling_factor = .75;
+    float y_scaling_factor = .50;
     void timer_callback() {
+      //mc_pub->publish(lur::create_manual_msg(0, 0, 500, 0, 0b0000000001001000));
       ++this->count;
-      // use message headers?
       if (this->count > this->timeout * 2) exit(1);
 
-      // for test node
-      //if (!q.empty()) {
-      //  //auto message = std_msgs::msg::String();
-      //  //message.data = "Message " + std::to_string(count_++);// + " (x,y,z,r,b): (" + msg.x + "," + msg.y + "," + msg.z + "," + msg.r + "," + msg.buttons + ")";
-      //  //RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
-      //  RCLCPP_INFO(this->get_logger(), "Publishing");
-      //  mc_pub->publish(*q.dequeue());
-      //}
-      //else printf("queue empty\n");
-      
-      float scaling_factor = 0.5;
-      msg.r += diff_r * (2000 / 800) * scaling_factor;
-      //msg.z += diff_z * (1000 / 600) * scaling_factor;
-      msg.x = 500;
-      mc_pub->publish(msg);  
-      msg.r += diff_r * (2000 / 800) * scaling_factor;
-      //msg.z += diff_z * (1000 / 600) * scaling_factor;
-      msg.x = 0;
+      if (this->count <= 85) {
+        if (!q.empty()) {
+	  msg = *q.dequeue();
+	}
+      }
+      else if (!q.empty()) {
+        msg = *q.dequeue();
+	if (det_check) {
+	  if (diff_y < -150 || diff_y > 150) {
+            msg.x = 0;
+	    msg.y += diff_y * y_scaling_factor;
+	    msg.z = 380;
+	    msg.r = 0;
+	  }
+	  else if (diff_y < -75 || diff_y > 75) {
+            msg.x = 0;
+	    msg.y = 0;
+	    msg.z = 380;
+	    msg.r += diff_y * y_scaling_factor;
+	  }
+	  else if (diff_z < -150 || diff_z > 150) {
+            msg.x = 0;
+	    msg.y = 0;
+	    msg.z -= diff_z * z_scaling_factor;
+	    msg.r = 0;
+	  }
+	  else {
+            ++det_count;
+	    msg.x = 350;
+	    msg.y = 0;
+	    msg.z = 380;
+	    msg.r = 0;
+	  }
+          ////msg.r += diff_r * r_scaling_factor;
+          //// might happen to often to use this simply
+          ////msg.z -= diff_z * z_scaling_factor;
+	  //msg.y += diff_y * y_scaling_factor;
+	}
+	//if (det_count > 12) {
+	//  msg.x = 0;
+	//  msg.z = 600;
+	//  msg.r = -500;
+	//}
+	//if (det_count > 20) exit(1);
+        //RCLCPP_INFO(this->get_logger(), "Publishing");
+      }
+      else {
+	if (det_check) {
+	  if (diff_y < -150 || diff_y > 150) {
+            msg.x = 0;
+	    msg.y += diff_y * y_scaling_factor;
+	    msg.z = 380;
+	    msg.r = 0;
+	  }
+	  else if (diff_y < -75 || diff_y > 75) {
+            msg.x = 0;
+	    msg.y = 0;
+	    msg.z = 380;
+	    msg.r -= diff_y * y_scaling_factor;
+	  }
+	  else if (diff_z < -100 || diff_z > 100) {
+            msg.x = 0;
+	    msg.y = 0;
+	    msg.z -= diff_z * z_scaling_factor;
+	    msg.r = 0;
+	  }
+	  else {
+            ++det_count;
+	    msg.x = 350;
+	    msg.y = 0;
+	    msg.z = 380;
+	    msg.r = 0;
+	  }
+          ////msg.r += diff_r * r_scaling_factor;
+          //// might happen to often to use this simply
+          ////msg.z -= diff_z * z_scaling_factor;
+	  //msg.y += diff_y * y_scaling_factor;
+	}
+      }
+      if (det_count > 56 && det_count < 64) {
+        ++det_count;
+        msg.x = 0;
+	msg.y = 0;
+	msg.z = 650;
+	msg.r = 0;
+      }
+      else if (det_count >= 64) exit(1);
+      mc_pub->publish(msg);
+      //msg.x = 0;
+      msg.y = 0;
+      msg.z = 380;
+      msg.r = 0;
       diff_r = 0;
-      //diff_z = 0;
+      diff_z = 0;
+      diff_y = 0;
     }
 };
 

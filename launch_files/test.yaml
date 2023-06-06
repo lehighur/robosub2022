@@ -15,18 +15,10 @@ launch:
     default: "my/chatter/ns"
 
 - node:
-    pkg: "brain"
-    exec: "brain_node"
-    param:
-    -
-      name: "timeout"
-      value: 60
-
-- node:
     pkg: "test"
     exec: "test_node"
 # pass file path here
     param:
     -
       name: "timeout"
-      value: 15
+      value: 60

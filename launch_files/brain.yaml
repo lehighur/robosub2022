@@ -5,4 +5,4 @@ launch:
     param:
     -
       name: "timeout"
-      value: 1200
+      value: 60 

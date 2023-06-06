@@ -30,10 +30,15 @@ class Camera : public rclcpp::Node {
 
     Camera() : 
       Node("Camera"),
+      count(0),
       front_detected(false),
       bottom_detected(false),
       front_capturing(false),
       bottom_capturing(false) {
+
+      this->declare_parameter("timeout");
+      rclcpp::Parameter p = this->get_parameter("timeout");
+      this->timeout = p.as_int();
 
       this->declare_parameter("front_camera");
       this->declare_parameter("bottom_camera");
@@ -55,7 +60,7 @@ class Camera : public rclcpp::Node {
       net.setPreferableBackend(DNN_BACKEND_CUDA);
       //net.setPreferableBackend(DNN_BACKEND_OPENCV);
       //net.setPreferableTarget(DNN_TARGET_CPU);
-      camera_pub = this->create_publisher<lur::Cam>("/camera", 10);
+      camera_pub = this->create_publisher<lur::Cam>("/lur/camera", 10);
       //brain_sub = this->create_subscription<lur::RString>("/brain", 10, std::bind(&Camera::brain_sub_callback, this, _1));
       VideoCapture fc;
       VideoCapture bc;
@@ -127,8 +132,10 @@ class Camera : public rclcpp::Node {
         lur::Cam msg;
         msg.x = boxes[indices[i]].x + (boxes[indices[i]].width / 2);
         msg.y = boxes[indices[i]].y + (boxes[indices[i]].height / 2);
-        RCLCPP_INFO(this->get_logger(), "x: %d, y: %d\n", msg.x, msg.y);
+        msg.width = boxes[indices[i]].width;
+        msg.height = boxes[indices[i]].height;
         msg.class_id = classIds[indices[i]];
+        RCLCPP_INFO(this->get_logger(), "class: %d\nx: %d, y: %d\n", msg.class_id, msg.x, msg.y);
         msg.confidence = confidences[indices[i]];
         this->camera_pub->publish(msg);
       }
@@ -201,24 +208,6 @@ class Camera : public rclcpp::Node {
     }
 
   private:
-    rclcpp::TimerBase::SharedPtr timer;
-
-    void timer_callback() {
-      printf("timer_callback\n");
-      if (!this->front_capturing) {
-        if (!this->front_detected) detect_front();
-      }
-      this->front_detected = false;
-      if (!this->bottom_capturing) {
-        if (!this->bottom_detected) detect_bottom();
-      }
-      this->bottom_detected = false;
-    }
-
-    void brain_sub_callback() {
-      printf("brain_sub_callback\n");
-    }
-
     VideoCapture front_capture;
     VideoCapture bottom_capture;
     Mat front_frame;
@@ -227,6 +216,30 @@ class Camera : public rclcpp::Node {
     int front_height;
     int bottom_width;
     int bottom_height;
+    int timeout;
+    rclcpp::TimerBase::SharedPtr timer;
+    std::size_t count;
+
+    void timer_callback() {
+      ++this->count;
+      // use message headers?
+      if (this->count > this->timeout * 2) exit(1);
+
+      // make this better
+      // might just want to read in frames every 500ms
+      if (!this->front_capturing) {
+        if (!this->front_detected) detect_front();
+        this->front_detected = false;
+      }
+      if (!this->bottom_capturing) {
+        if (!this->bottom_detected) detect_bottom();
+        this->bottom_detected = false;
+      }
+    }
+
+    void brain_sub_callback() {
+      printf("brain_sub_callback\n");
+    }
 };
 
 int main(int argc, char **argv) {

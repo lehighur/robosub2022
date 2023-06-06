@@ -20,7 +20,7 @@ launch:
     param:
     -
       name: "timeout"
-      value: 900
+      value: 150
 
 - node:
     pkg: "camera"
@@ -32,3 +32,6 @@ launch:
     -
         name: "bottom_camera"
         value: 1
+    -
+        name: "timeout"
+        value: 150 

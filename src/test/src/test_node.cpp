@@ -77,7 +77,7 @@ class Test : public rclcpp::Node {
     }
 
     void publish_queue() {
-      while (!q.empty()) {
+      if (!q.empty()) {
         printf("publishing\n");
         test_mc_pub->publish(q.dequeue());
       }
@@ -130,7 +130,9 @@ int main(int argc, char ** argv)
       //uint8 MAV_MODE_MANUAL_ARMED = 192
       //uint8 MAV_MODE_GUIDED_DISARMED = 88
       //uint8 MAV_MODE_GUIDED_ARMED = 216
-  bool set_check = test_node->set_mode("MAV_MODE_STABILIZE_ARMED");
+  // throws error right now
+  //bool set_check = test_node->set_mode("STABILIZE");
+  //RCLCPP_INFO(test_node->get_logger(), "set_mode: %s", set_check ? "true" : "false");
   //test_node->set_mode("MAV_MODE_MANUAL_ARMED");
   //test_node->set_mode("MAV_MODE_GUIDED_ARMED");
   test_node->run_man_test("/home/lur/robosub22/src/test/src/man_test.txt");

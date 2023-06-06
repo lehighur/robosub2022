@@ -15,6 +15,7 @@
 #include "mavros_msgs/msg/state.hpp"
 #include "mavros_msgs/msg/manual_control.hpp"
 #include "mavros_msgs/srv/set_mode.hpp"
+#include "geometry_msgs/msg/vector3.hpp"
 #include "lur_pkg/msg/cam.hpp"
 
 // lur headers

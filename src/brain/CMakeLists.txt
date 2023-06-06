@@ -14,6 +14,7 @@ find_package(std_msgs REQUIRED)
 find_package(mavros REQUIRED)
 find_package(mavros_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(lur_pkg REQUIRED)
 
 add_executable(brain_node
@@ -35,6 +36,7 @@ ament_target_dependencies(
   mavros
   mavros_msgs
   sensor_msgs
+  geometry_msgs
   lur_pkg
 )
 
